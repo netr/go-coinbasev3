@@ -10,6 +10,19 @@ import (
 	"time"
 )
 
+type ChannelType string
+
+const (
+	ChannelTypeHeartbeats   ChannelType = "heartbeat"
+	ChannelTypeCandles      ChannelType = "candles"
+	ChannelTypeStatus       ChannelType = "status"
+	ChannelTypeTicker       ChannelType = "ticker"
+	ChannelTypeTickerBatch  ChannelType = "ticker_batch"
+	ChannelTypeLevel2       ChannelType = "level2"
+	ChannelTypeUser         ChannelType = "user"
+	ChannelTypeMarketTrades ChannelType = "market_trades"
+)
+
 type WsFeedSubscription struct {
 	Type       string   `json:"type"`
 	ProductIds []string `json:"product_ids"`
