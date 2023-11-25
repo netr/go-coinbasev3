@@ -1,17 +1,17 @@
 package go_coinbasev3
 
 // GetFiatCurrencies lists known fiat currencies. Currency codes conform to the ISO 4217 standard where possible
-func (c *ApiClient) GetFiatCurrencies() (*FiatCurrencies, error) {
+func (c *ApiClient) GetFiatCurrencies() (FiatCurrencies, error) {
 	u := "https://api.coinbase.com/v2/currencies"
 
-	fiats := new(FiatCurrencies)
+	var fiats FiatCurrencies
 	resp, err := c.client.R().SetSuccessResult(&fiats).Get(u)
 	if err != nil {
-		return nil, err
+		return fiats, err
 	}
 
 	if !resp.IsSuccessState() {
-		return nil, ErrFailedToUnmarshal
+		return fiats, ErrFailedToUnmarshal
 	}
 
 	return fiats, nil
@@ -27,17 +27,17 @@ type FiatCurrencies struct {
 }
 
 // GetCurrencies lists known cryptocurrencies.
-func (c *ApiClient) GetCurrencies() (*Currencies, error) {
+func (c *ApiClient) GetCurrencies() (Currencies, error) {
 	u := "https://api.coinbase.com/v2/currencies/crypto"
 
-	curr := new(Currencies)
+	var curr Currencies
 	resp, err := c.client.R().SetSuccessResult(&curr).Get(u)
 	if err != nil {
-		return nil, err
+		return curr, err
 	}
 
 	if !resp.IsSuccessState() {
-		return nil, ErrFailedToUnmarshal
+		return curr, ErrFailedToUnmarshal
 	}
 
 	return curr, nil
@@ -56,5 +56,37 @@ type Currencies struct {
 		AddressRegex        string `json:"address_regex"`
 		DestinationTagName  string `json:"destination_tag_name,omitempty"`
 		DestinationTagRegex string `json:"destination_tag_regex,omitempty"`
+	} `json:"data"`
+}
+
+// GetExchangeRates get current exchange rates. Default base currency is USD, but it can be defined as any supported currency
+func (c *ApiClient) GetExchangeRates(currency string) (ExchangeRates, error) {
+	u := "https://api.coinbase.com/v2/exchange-rates"
+
+	if currency == "" {
+		currency = "USD"
+	}
+
+	var rates ExchangeRates
+	resp, err := c.client.R().
+		SetQueryParam("currency", currency).
+		SetSuccessResult(&rates).
+		Get(u)
+	if err != nil {
+		return rates, err
+	}
+
+	if !resp.IsSuccessState() {
+		return rates, ErrFailedToUnmarshal
+	}
+
+	return rates, nil
+}
+
+// ExchangeRates represents a list of exchange rates for a given currency.
+type ExchangeRates struct {
+	Data struct {
+		Currency string            `json:"currency"`
+		Rates    map[string]string `json:"rates"`
 	} `json:"data"`
 }
