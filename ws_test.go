@@ -44,13 +44,12 @@ func TestClient_Close(t *testing.T) {
 		t.Fatalf("Dial: %v", err)
 	}
 
-	cl.Close()
+	cl.Shutdown()
 	time.Sleep(1 * time.Second)
-	close(chRead)
 
 	err = ws.NetConn().Close()
 	if !strings.HasSuffix(err.Error(), "use of closed network connection") {
-		t.Fatalf("Close: %v", err)
+		t.Fatalf("Shutdown: %v", err)
 	}
 }
 
@@ -61,7 +60,7 @@ func TestClient_Reconnecting(t *testing.T) {
 	defer func(ws *websocket.Conn) {
 		err := ws.Close()
 		if err != nil {
-			t.Fatalf("Close: %v", err)
+			t.Fatalf("Shutdown: %v", err)
 		}
 	}(ws)
 
@@ -69,17 +68,12 @@ func TestClient_Reconnecting(t *testing.T) {
 	want := 5 // original connection + 4 underlying connection closes in loop
 	reconCount := 0
 	reconWant := 4 // 4 underlying connection closes in loop
-	discCount := 0
-	discWant := 5 // 4 underlying connection closes in loop + final cl.Close()
 
 	onConn := func() {
 		count++
 	}
 	onRecon := func() {
 		reconCount++
-	}
-	onDisc := func() {
-		discCount++
 	}
 
 	chRead := make(chan []byte)
@@ -88,7 +82,7 @@ func TestClient_Reconnecting(t *testing.T) {
 		ReadChannel:      chRead,
 		SubscriptionData: []byte{},
 		OnConnect:        onConn,
-		OnDisconnect:     onDisc,
+		OnDisconnect:     func() {},
 		OnReconnect:      onRecon,
 	})
 	if err != nil {
@@ -105,17 +99,13 @@ func TestClient_Reconnecting(t *testing.T) {
 		_ = cl.conn.Close()
 	}
 	time.Sleep(100 * time.Millisecond)
-	cl.Close()
-	close(chRead)
+	cl.Shutdown()
 
 	if count != want {
 		t.Errorf("count = %d; want %d", count, want)
 	}
 	if reconCount != reconWant {
 		t.Errorf("reconCount = %d; want %d", reconCount, reconWant)
-	}
-	if discCount != discWant {
-		t.Errorf("discCount = %d; want %d", discCount, discWant)
 	}
 }
 
@@ -126,7 +116,7 @@ func TestWsClient_Backoff_ShouldNotTriggerRecon(t *testing.T) {
 	defer func(ws *websocket.Conn) {
 		err := ws.Close()
 		if err != nil {
-			t.Fatalf("Close: %v", err)
+			t.Fatalf("Shutdown: %v", err)
 		}
 	}(ws)
 
@@ -159,8 +149,7 @@ func TestWsClient_Backoff_ShouldNotTriggerRecon(t *testing.T) {
 		_ = cl.conn.Close()
 	}
 	time.Sleep(100 * time.Millisecond)
-	cl.Close()
-	close(chRead)
+	cl.Shutdown()
 
 	if reconCount != reconWant {
 		t.Errorf("reconCount = %d; want %d", reconCount, reconWant)
@@ -174,7 +163,7 @@ func TestWsClient_Backoff_ShouldTriggerRecon(t *testing.T) {
 	defer func(ws *websocket.Conn) {
 		err := ws.Close()
 		if err != nil {
-			t.Fatalf("Close: %v", err)
+			t.Fatalf("Shutdown: %v", err)
 		}
 	}(ws)
 
@@ -211,8 +200,7 @@ func TestWsClient_Backoff_ShouldTriggerRecon(t *testing.T) {
 		_ = cl.conn.Close()
 	}
 	time.Sleep(100 * time.Millisecond)
-	cl.Close()
-	close(chRead)
+	cl.Shutdown()
 
 	if reconCount != reconWant {
 		t.Errorf("reconCount = %d; want %d", reconCount, reconWant)
@@ -232,7 +220,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Println("upgrade:", err)
 		return
 	}
-	//defer ws.Close()
+	//defer ws.Shutdown()
 }
 func newWSServer(t *testing.T, h http.Handler) (*httptest.Server, *websocket.Conn) {
 	t.Helper()

@@ -164,11 +164,13 @@ func (c *WsClient) Write(data []byte) error {
 	return nil
 }
 
-// Close closes the websocket connection. This will also close the read channel and stop the reconnect channel.
-func (c *WsClient) Close() {
+// Shutdown closes the websocket connection. This will also close the read channel and the underlying reconnect channel.
+func (c *WsClient) Shutdown() {
 	c.cancel()
 
 	c.isShutdown = true
+	close(c.chans.read)
+	close(c.chans.recon)
 	err := c.conn.Close()
 	if err != nil {
 		return
