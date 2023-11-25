@@ -23,17 +23,24 @@ const (
 	ChannelTypeMarketTrades ChannelType = "market_trades"
 )
 
+type SubType string
+
+const (
+	SubTypeSubscribe   SubType = "subscribe"
+	SubTypeUnsubscribe SubType = "unsubscribe"
+)
+
 type WsFeedSubscription struct {
-	Type       string   `json:"type"`
-	ProductIds []string `json:"product_ids"`
-	Channel    string   `json:"channel"`
-	Signature  string   `json:"signature"`
-	ApiKey     string   `json:"api_key"`
-	SecretKey  string   `json:"-"`
-	Timestamp  int      `json:"timestamp"`
+	Type       SubType     `json:"type"`
+	ProductIds []string    `json:"product_ids"`
+	Channel    ChannelType `json:"channel"`
+	Signature  string      `json:"signature"`
+	ApiKey     string      `json:"api_key"`
+	SecretKey  string      `json:"-"`
+	Timestamp  int         `json:"timestamp"`
 }
 
-func NewWsFeedSubscription(subType string, productIds []string, channel, apiKey, secretKey string) *WsFeedSubscription {
+func NewWsFeedSubscription(subType SubType, productIds []string, channel ChannelType, apiKey, secretKey string) *WsFeedSubscription {
 	s := &WsFeedSubscription{
 		Type:       subType,
 		ProductIds: productIds,

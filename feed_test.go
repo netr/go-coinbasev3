@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewWsFeedSubscription(t *testing.T) {
-	feed := NewWsFeedSubscription("subscribe", []string{"BTC-USD"}, "level2", "1234567890", "secretkey")
+	feed := NewWsFeedSubscription(SubTypeSubscribe, []string{"BTC-USD"}, ChannelTypeHeartbeats, "1234567890", "secretkey")
 	if feed.Type != "subscribe" {
 		t.Errorf("Expected subscribe, got %s", feed.Type)
 	}
