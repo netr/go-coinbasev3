@@ -1,4 +1,4 @@
-package go_coinbasev3
+package coinbasev3
 
 // GetFiatCurrencies lists known fiat currencies. Currency codes conform to the ISO 4217 standard where possible
 func (c *ApiClient) GetFiatCurrencies() (FiatCurrencies, error) {

@@ -1,10 +1,30 @@
 # Coinbase Advanced Trades API (v3)
 
-## Run tests
+This is a Go client for the Coinbase Advanced Trades API (v3). Work in progress.
+
+## Installation
 
 ```bash
-go test ./... -v
+go get github.com/netr/go-coinbasev3
 ```
+
+## Progress
+- [X] Websocket Feed
+- [ ] Advanced Trade API (V3)
+    - [ ] List Accounts
+    - [ ] Get Account
+    - [ ] Create Order
+    - [ ] Cancel Orders
+    - [ ] List Orders
+    - [ ] List Fills
+    - [ ] Get Order
+    - [ ] Get Best Bid/Ask
+    - [ ] Get Product Book
+    - [ ] List Products
+    - [ ] Get Product
+    - [ ] Get Product Candles
+    - [ ] Get Market Trades
+    - [ ] Get Transactions Summary
 
 ## Websocket
 
@@ -43,4 +63,10 @@ for {
             log.Println(string(msg))
     }
 }
+```
+
+## Run tests
+
+```bash
+go test ./... -v
 ```

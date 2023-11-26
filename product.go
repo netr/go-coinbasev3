@@ -1,4 +1,4 @@
-package go_coinbasev3
+package coinbasev3
 
 // GetProducts gets a list of available currency pairs for trading.
 func (c *ApiClient) GetProducts() ([]Products, error) {

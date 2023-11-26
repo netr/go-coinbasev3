@@ -1,4 +1,4 @@
-package go_coinbasev3
+package coinbasev3
 
 // GetBuyPrice get the total price to buy a currency.
 func (c *ApiClient) GetBuyPrice(pair string) (CurrencyPairPrice, error) {

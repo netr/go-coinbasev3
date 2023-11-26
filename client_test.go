@@ -1,1 +1,1 @@
-package go_coinbasev3
+package coinbasev3

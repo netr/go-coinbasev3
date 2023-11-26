@@ -1,4 +1,4 @@
-package go_coinbasev3
+package coinbasev3
 
 import (
 	"github.com/gorilla/websocket"
