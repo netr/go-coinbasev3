@@ -9,8 +9,8 @@ go get github.com/netr/go-coinbasev3
 ```
 
 ## Progress
-- [X] Websocket Feed
-- [ ] Advanced Trade API (V3)
+- [X] Websocket Feed [Advanced Trade WebSocket Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-overview)
+- [ ] Advanced Trade API (V3) [Advanced Trade REST API Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-overview)
     - [ ] List Accounts
     - [ ] Get Account
     - [ ] Create Order
@@ -29,16 +29,16 @@ go get github.com/netr/go-coinbasev3
 ## Websocket
 
 ```go
-sub := coinbase.NewWsFeedSubscription(
-    coinbase.SubTypeSubscribe,
+sub := coinbasev3.NewWsFeedSubscription(
+    coinbasev3.SubTypeSubscribe,
     []string{"ETH-USD", "BTC-USD"},
-    coinbase.ChannelTypeTicker,
+    coinbasev3.ChannelTypeTicker,
     "api_key",
     "secret_key",
 )
 
 readCh := make(chan []byte)
-ws, err := coinbase.NewWsClient(coinbase.WsClientConfig{
+ws, err := coinbasev3.NewWsClient(coinbase.WsClientConfig{
     Url:              "wss://advanced-trade-ws.coinbase.com",
     ReadChannel:      readCh,
     SubscriptionData: sub.Marshal(),
