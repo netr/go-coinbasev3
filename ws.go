@@ -65,6 +65,17 @@ type WsClientConfig struct {
 	Debug        bool        // optional. defaults to false. prints debug messages
 }
 
+func NewWsClientConfig(apiKey, secretKey string, readCh chan []byte, wsChannels []WsChannel) WsClientConfig {
+	return WsClientConfig{
+		ApiKey:      apiKey,
+		SecretKey:   secretKey,
+		ReadChannel: readCh,
+		WsChannels:  wsChannels,
+		UseBackoff:  true,
+		Debug:       true,
+	}
+}
+
 // tryValidate validates the websocket client configuration.
 func (c *WsClientConfig) tryValidate() error {
 	if c.ApiKey == "" {
