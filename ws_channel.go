@@ -40,7 +40,7 @@ type WsChannel struct {
 	Timestamp  string      `json:"timestamp"`
 }
 
-func NewWsChannel(subType SubType, productIds []string, channel ChannelType) WsChannel {
+func NewWsChannel(subType SubType, channel ChannelType, productIds []string) WsChannel {
 	s := WsChannel{
 		Type:       subType,
 		ProductIds: productIds,
@@ -49,12 +49,12 @@ func NewWsChannel(subType SubType, productIds []string, channel ChannelType) WsC
 	return s
 }
 
-func NewWsChannelSub(productIds []string, channel ChannelType) WsChannel {
-	return NewWsChannel(SubTypeSubscribe, productIds, channel)
+func NewWsChannelSub(channel ChannelType, productIds []string) WsChannel {
+	return NewWsChannel(SubTypeSubscribe, channel, productIds)
 }
 
-func NewWsChannelUnsub(productIds []string, channel ChannelType) WsChannel {
-	return NewWsChannel(SubTypeUnsubscribe, productIds, channel)
+func NewWsChannelUnsub(channel ChannelType, productIds []string) WsChannel {
+	return NewWsChannel(SubTypeUnsubscribe, channel, productIds)
 }
 
 func (s *WsChannel) marshal(apiKey, secretKey string) []byte {

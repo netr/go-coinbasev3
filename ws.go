@@ -22,35 +22,6 @@ var (
 	ErrNotConnected       = fmt.Errorf("not connected")
 )
 
-// WsClient is an automatically reconnecting websocket client.
-type WsClient struct {
-	conn          *websocket.Conn
-	url           string
-	wsChannels    []WsChannel
-	innerChannels channels
-	cbs           callbacks
-	isShutdown    bool
-	useBackoff    bool
-	debug         bool
-	apiKey        string
-	secretKey     string
-	ctx           context.Context
-	cancel        context.CancelFunc
-}
-
-// channels contains the read channel given by the developer and the internal reconnection channel.
-type channels struct {
-	read  chan []byte
-	recon chan bool
-}
-
-// callbacks contains the callbacks used by the developer to handle events.
-type callbacks struct {
-	onConnect    func()
-	onDisconnect func()
-	onReconnect  func()
-}
-
 // WsClientConfig is the configuration struct for creating a new websocket client.
 type WsClientConfig struct {
 	Url          string      // optional. defaults to "wss://advanced-trade-ws.coinbase.com"
@@ -101,6 +72,35 @@ func (c *WsClientConfig) tryValidate() error {
 		c.OnReconnect = func() {}
 	}
 	return nil
+}
+
+// WsClient is an automatically reconnecting websocket client.
+type WsClient struct {
+	conn          *websocket.Conn
+	url           string
+	wsChannels    []WsChannel
+	innerChannels channels
+	cbs           callbacks
+	isShutdown    bool
+	useBackoff    bool
+	debug         bool
+	apiKey        string
+	secretKey     string
+	ctx           context.Context
+	cancel        context.CancelFunc
+}
+
+// channels contains the read channel given by the developer and the internal reconnection channel.
+type channels struct {
+	read  chan []byte
+	recon chan bool
+}
+
+// callbacks contains the callbacks used by the developer to handle events.
+type callbacks struct {
+	onConnect    func()
+	onDisconnect func()
+	onReconnect  func()
 }
 
 // NewWsClient creates a new websocket client.

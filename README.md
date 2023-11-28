@@ -73,6 +73,35 @@ for {
 ws.Shutdown()
 ```
 
+### Reading messages from the websocket
+The decision to use a read channel (instead of a callback) is to allow a more flexible dx, while also allowing the underlying socket to re-connect without any external interruptions or maintenance. The read channel will remain open for the entirety of the scope of the websocket client. If the websocket client is shutdown the read channel will be closed as well.
+
+#### Note on the read channel data type
+The read channel uses []byte instead of a default struct because the websocket client does not know what type of message it is receiving. The websocket client will not attempt to parse the message in any way. It is up to the developer to parse the message into the appropriate struct.
+
+#### Parsing into pre-defined structs
+For ease of use there are some helper functions to parse the messages into the appropriate struct. These helpers are not required to use the websocket client.
+
+To utilize the helper functions you can parse the message into the default event struct, which is `coinbasev3.Event`.
+
+Once you have the event struct you can use the `evt.IsTickerEvent()`, `evt.IsHeartbeatEvent()`, etc... to determine what type of event it is. Then you can use the `evt.GetTickerEvent()`, `evt.GetHeartbeatEvent()`, etc... to convert the default event into the appropriate struct.
+
+```go
+var evt coinbasev3.Event // default event struct (the events array is defined as an interface{})
+err := json.Unmarshal(msg, &evt)
+if err != nil {
+  panic(err)
+}
+
+// check if the event is a ticker event
+if evt.IsTickerEvent() {
+  // convert the event into a ticker event struct
+  tick, err := evt.GetTickerEvent()
+  if err != nil {
+      panic(err)
+  }
+}
+```
 ## Run tests
 
 ```bash
