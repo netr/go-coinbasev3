@@ -24,18 +24,18 @@ var (
 
 // WsClient is an automatically reconnecting websocket client.
 type WsClient struct {
-	conn       *websocket.Conn
-	url        string
-	wsChannels []WsChannel
-	chans      channels
-	cbs        callbacks
-	isShutdown bool
-	useBackoff bool
-	debug      bool
-	apiKey     string
-	secretKey  string
-	ctx        context.Context
-	cancel     context.CancelFunc
+	conn          *websocket.Conn
+	url           string
+	wsChannels    []WsChannel
+	innerChannels channels
+	cbs           callbacks
+	isShutdown    bool
+	useBackoff    bool
+	debug         bool
+	apiKey        string
+	secretKey     string
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 // channels contains the read channel given by the developer and the internal reconnection channel.
@@ -55,7 +55,7 @@ type callbacks struct {
 type WsClientConfig struct {
 	Url          string      // optional. defaults to "wss://advanced-trade-ws.coinbase.com"
 	ReadChannel  chan []byte // required for receiving messages from the websocket connection
-	WsChannels   []WsChannel // required for subscribing to channels on the websocket connection
+	WsChannels   []WsChannel // required for subscribing to innerChannels on the websocket connection
 	ApiKey       string      // required for signing websocket messages
 	SecretKey    string      // required for signing websocket messages
 	OnConnect    func()      // optional. called when the websocket connection is established
@@ -104,7 +104,7 @@ func NewWsClient(cfg WsClientConfig) (*WsClient, error) {
 	c := &WsClient{
 		conn: nil,
 		url:  cfg.Url,
-		chans: channels{
+		innerChannels: channels{
 			read:  cfg.ReadChannel,
 			recon: make(chan bool),
 		},
@@ -195,8 +195,8 @@ func (c *WsClient) Shutdown() {
 	c.cancel()
 
 	c.isShutdown = true
-	close(c.chans.read)
-	close(c.chans.recon)
+	close(c.innerChannels.read)
+	close(c.innerChannels.recon)
 	err := c.conn.Close()
 	if err != nil {
 		return
@@ -205,7 +205,7 @@ func (c *WsClient) Shutdown() {
 
 // ReadChan returns the channel that receives messages from the websocket connection.
 func (c *WsClient) ReadChan() chan []byte {
-	return c.chans.read
+	return c.innerChannels.read
 }
 
 // initReconnectChannel will attempt to reconnect to the websocket server using an exponential backoff strategy with jitter.
@@ -218,7 +218,7 @@ func (c *WsClient) initReconnectChannel() {
 				c.printf("Reconnect channel closed due to context cancellation.")
 			}
 			return
-		case <-c.chans.recon:
+		case <-c.innerChannels.recon:
 			_ = c.conn.Close()
 
 			if c.useBackoff {
@@ -261,12 +261,12 @@ func (c *WsClient) read() {
 				c.printf("WebSocket read error: %v\n", err)
 			}
 			if !c.isShutdown {
-				c.chans.recon <- true
+				c.innerChannels.recon <- true
 			}
 			return
 		}
 
-		c.chans.read <- message
+		c.innerChannels.read <- message
 	}
 }
 
@@ -290,32 +290,4 @@ func calculateBackoff(currentBackoff, maxBackoff time.Duration) time.Duration {
 		return maxBackoff
 	}
 	return nextBackoff
-}
-
-// TickerMessage represents a ticker message from the websocket connection.
-type TickerMessage struct {
-	Channel     string        `json:"channel"`
-	ClientId    string        `json:"client_id"`
-	Timestamp   time.Time     `json:"timestamp"`
-	SequenceNum int           `json:"sequence_num"`
-	Events      []TickerEvent `json:"events"`
-}
-
-// TickerEvent represents a ticker event from the websocket connection.
-type TickerEvent struct {
-	Type    string   `json:"type"`
-	Tickers []Ticker `json:"tickers"`
-}
-
-// Ticker represents a ticker from the websocket connection.
-type Ticker struct {
-	Type               string `json:"type"`
-	ProductId          string `json:"product_id"`
-	Price              string `json:"price"`
-	Volume24H          string `json:"volume_24_h"`
-	Low24H             string `json:"low_24_h"`
-	High24H            string `json:"high_24_h"`
-	Low52W             string `json:"low_52_w"`
-	High52W            string `json:"high_52_w"`
-	PricePercentChg24H string `json:"price_percent_chg_24_h"`
 }

@@ -28,12 +28,12 @@ func TestClient_Close(t *testing.T) {
 	}
 
 	cl, err := NewWsClient(WsClientConfig{
-		Url:              "https://badurl.com",
-		ReadChannel:      chRead,
-		SubscriptionData: []byte{},
-		OnConnect:        func() {},
-		OnDisconnect:     func() {},
-		OnReconnect:      onRecon,
+		Url:          "https://badurl.com",
+		ReadChannel:  chRead,
+		WsChannels:   []WsChannel{},
+		OnConnect:    func() {},
+		OnDisconnect: func() {},
+		OnReconnect:  onRecon,
 	})
 	if err != nil {
 		t.Fatalf("NewWsClient: %v", err)
@@ -78,12 +78,12 @@ func TestClient_Reconnecting(t *testing.T) {
 
 	chRead := make(chan []byte)
 	cl, err := NewWsClient(WsClientConfig{
-		Url:              makeWsProto(s.URL),
-		ReadChannel:      chRead,
-		SubscriptionData: []byte{},
-		OnConnect:        onConn,
-		OnDisconnect:     func() {},
-		OnReconnect:      onRecon,
+		Url:          makeWsProto(s.URL),
+		ReadChannel:  chRead,
+		WsChannels:   []WsChannel{},
+		OnConnect:    onConn,
+		OnDisconnect: func() {},
+		OnReconnect:  onRecon,
 	})
 	if err != nil {
 		t.Fatalf("NewWsClient: %v", err)
@@ -125,11 +125,11 @@ func TestWsClient_Backoff_ShouldNotTriggerRecon(t *testing.T) {
 
 	chRead := make(chan []byte)
 	cl, err := NewWsClient(WsClientConfig{
-		Url:              makeWsProto(s.URL),
-		ReadChannel:      chRead,
-		SubscriptionData: []byte{},
-		OnConnect:        func() {},
-		OnDisconnect:     func() {},
+		Url:          makeWsProto(s.URL),
+		ReadChannel:  chRead,
+		WsChannels:   []WsChannel{},
+		OnConnect:    func() {},
+		OnDisconnect: func() {},
 		OnReconnect: func() {
 			reconCount++
 		},
@@ -178,13 +178,13 @@ func TestWsClient_Backoff_ShouldTriggerRecon(t *testing.T) {
 
 	chRead := make(chan []byte)
 	cl, err := NewWsClient(WsClientConfig{
-		Url:              makeWsProto(s.URL),
-		ReadChannel:      chRead,
-		SubscriptionData: []byte{},
-		OnConnect:        onConn,
-		OnDisconnect:     onDisc,
-		OnReconnect:      onRecon,
-		UseBackoff:       true,
+		Url:          makeWsProto(s.URL),
+		ReadChannel:  chRead,
+		WsChannels:   []WsChannel{},
+		OnConnect:    onConn,
+		OnDisconnect: onDisc,
+		OnReconnect:  onRecon,
+		UseBackoff:   true,
 	})
 	if err != nil {
 		t.Fatalf("NewWsClient: %v", err)
