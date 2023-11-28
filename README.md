@@ -9,12 +9,12 @@ go get github.com/netr/go-coinbasev3
 ```
 
 ## Progress
+Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-pro-mapping)
 - [X] Websocket Feed [Advanced Trade WebSocket Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-overview)
-  - [ ] Create individual helpers for each channel type
-    - [ ] `NewWsTickerSubscription(['ETH-USD', 'BTC-USD'], apiKey, secretKey, readCh, etc...)` - Useful for automatically typing the messages that are being received from the read channel.
+- [X] Public API (No authentication needed)
 - [ ] Advanced Trade API (V3) [Advanced Trade REST API Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-overview)
-    - [ ] List Accounts
-    - [ ] Get Account
+    - [x] List Accounts
+    - [x] Get Account
     - [ ] Create Order
     - [ ] Cancel Orders
     - [ ] List Orders
@@ -27,7 +27,18 @@ go get github.com/netr/go-coinbasev3
     - [ ] Get Product Candles
     - [ ] Get Market Trades
     - [ ] Get Transactions Summary
-
+- [ ] Sign In with Coinbase API v2
+  - [ ] Show an Account
+  - [ ] List Transactions
+  - [ ] Show Address
+  - [ ] Create Address
+  - [ ] Get Currencies
+  - [ ] Deposit funds
+  - [ ] List Payment Methods
+  - [ ] List Transactions
+  - [ ] Show a Transaction
+  - [ ] Send Money
+  - [ ] Withdraw Funds
 ## Websocket
 
 The websocket client is a wrapper around the gorilla websocket with a few extra features to make it easier to use with the Coinbase Advanced Trade API.
@@ -41,11 +52,13 @@ products := []string{"ETH-USD", "BTC-USD"}
 readCh := make(chan []byte)
 for _, product := range products {
   // create a ticker + heartbeat channel subscription. See: https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-channels
-  ticker := coinbasev3.NewWsChannelSub(coinbasev3.ChannelTypeTicker, []string{product})
-  heartbeat := coinbasev3.NewWsChannelSub(coinbasev3.ChannelTypeHeartbeats, []string{product})
+  wsChannels := []coinbasev3.WebsocketChannel{
+    coinbasev3.NewTickerChannel([]string{product}),
+    coinbasev3.NewHeartbeatsChannel([]string{product}),
+  }
   
   // create a minimal websocket config
-  wsConfig := coinbasev3.NewWsConfig("api_key", "secret_key", readCh, []coinbasev3.WsChannel{ticker, heartbeat})
+  wsConfig := coinbasev3.NewWsConfig("api_key", "secret_key", readCh, wsChannels)
   
   // create a websocket client with the config
   ws, err := coinbasev3.NewWsClient(wsConfig)

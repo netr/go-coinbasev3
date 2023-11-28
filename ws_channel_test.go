@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewWsFeedSubscription(t *testing.T) {
-	feed := NewWsChannel(SubTypeSubscribe, ChannelTypeHeartbeats, []string{"BTC-USD"})
+	feed := NewWebsocketChannel(SubTypeSubscribe, ChannelTypeHeartbeats, []string{"BTC-USD"})
 	if feed.Type != "subscribe" {
 		t.Errorf("Expected subscribe, got %s", feed.Type)
 	}

@@ -24,19 +24,19 @@ var (
 
 // WsClientConfig is the configuration struct for creating a new websocket client.
 type WsClientConfig struct {
-	Url          string      // optional. defaults to "wss://advanced-trade-ws.coinbase.com"
-	ReadChannel  chan []byte // required for receiving messages from the websocket connection
-	WsChannels   []WsChannel // required for subscribing to innerChannels on the websocket connection
-	ApiKey       string      // required for signing websocket messages
-	SecretKey    string      // required for signing websocket messages
-	OnConnect    func()      // optional. called when the websocket connection is established
-	OnDisconnect func()      // optional. called when the websocket connection is closed
-	OnReconnect  func()      // optional. called when the websocket connection is re-established
-	UseBackoff   bool        // optional. defaults to false. uses an exponential backoff strategy with jitter
-	Debug        bool        // optional. defaults to false. prints debug messages
+	Url          string             // optional. defaults to "wss://advanced-trade-ws.coinbase.com"
+	ReadChannel  chan []byte        // required for receiving messages from the websocket connection
+	WsChannels   []WebsocketChannel // required for subscribing to innerChannels on the websocket connection
+	ApiKey       string             // required for signing websocket messages
+	SecretKey    string             // required for signing websocket messages
+	OnConnect    func()             // optional. called when the websocket connection is established
+	OnDisconnect func()             // optional. called when the websocket connection is closed
+	OnReconnect  func()             // optional. called when the websocket connection is re-established
+	UseBackoff   bool               // optional. defaults to false. uses an exponential backoff strategy with jitter
+	Debug        bool               // optional. defaults to false. prints debug messages
 }
 
-func NewWsClientConfig(apiKey, secretKey string, readCh chan []byte, wsChannels []WsChannel) WsClientConfig {
+func NewWsClientConfig(apiKey, secretKey string, readCh chan []byte, wsChannels []WebsocketChannel) WsClientConfig {
 	return WsClientConfig{
 		ApiKey:      apiKey,
 		SecretKey:   secretKey,
@@ -78,7 +78,7 @@ func (c *WsClientConfig) tryValidate() error {
 type WsClient struct {
 	conn          *websocket.Conn
 	url           string
-	wsChannels    []WsChannel
+	wsChannels    []WebsocketChannel
 	innerChannels channels
 	cbs           callbacks
 	isShutdown    bool

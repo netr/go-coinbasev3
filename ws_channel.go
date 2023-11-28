@@ -1,9 +1,6 @@
 package coinbasev3
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -30,7 +27,7 @@ const (
 	SubTypeUnsubscribe SubType = "unsubscribe"
 )
 
-type WsChannel struct {
+type WebsocketChannel struct {
 	Type       SubType     `json:"type"`
 	ProductIds []string    `json:"product_ids"`
 	Channel    ChannelType `json:"channel"`
@@ -40,8 +37,8 @@ type WsChannel struct {
 	Timestamp  string      `json:"timestamp"`
 }
 
-func NewWsChannel(subType SubType, channel ChannelType, productIds []string) WsChannel {
-	s := WsChannel{
+func NewWebsocketChannel(subType SubType, channel ChannelType, productIds []string) WebsocketChannel {
+	s := WebsocketChannel{
 		Type:       subType,
 		ProductIds: productIds,
 		Channel:    channel,
@@ -49,15 +46,43 @@ func NewWsChannel(subType SubType, channel ChannelType, productIds []string) WsC
 	return s
 }
 
-func NewWsChannelSub(channel ChannelType, productIds []string) WsChannel {
-	return NewWsChannel(SubTypeSubscribe, channel, productIds)
+func NewChannelSubscribe(channel ChannelType, productIds []string) WebsocketChannel {
+	return NewWebsocketChannel(SubTypeSubscribe, channel, productIds)
 }
 
-func NewWsChannelUnsub(channel ChannelType, productIds []string) WsChannel {
-	return NewWsChannel(SubTypeUnsubscribe, channel, productIds)
+func NewChannelUnsubscribe(channel ChannelType, productIds []string) WebsocketChannel {
+	return NewWebsocketChannel(SubTypeUnsubscribe, channel, productIds)
 }
 
-func (s *WsChannel) marshal(apiKey, secretKey string) []byte {
+func NewTickerChannel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeTicker, productIds)
+}
+
+func NewTickerBatchChannel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeTickerBatch, productIds)
+}
+
+func NewCandlesChannel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeCandles, productIds)
+}
+
+func NewHeartbeatsChannel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeHeartbeats, productIds)
+}
+
+func NewStatusChannel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeStatus, productIds)
+}
+
+func NewLevel2Channel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeLevel2, productIds)
+}
+
+func NewUserChannel(productIds []string) WebsocketChannel {
+	return NewChannelSubscribe(ChannelTypeUser, productIds)
+}
+
+func (s *WebsocketChannel) marshal(apiKey, secretKey string) []byte {
 	s.ApiKey = apiKey
 	s.SecretKey = secretKey
 
@@ -72,19 +97,12 @@ func (s *WsChannel) marshal(apiKey, secretKey string) []byte {
 	return b
 }
 
-func (s *WsChannel) setSignature() {
+func (s *WebsocketChannel) setSignature() {
 	// Concatenating and comma-separating the timestamp, channel name, and product Ids, for example: 1660838876level2ETH-USD,ETH-EUR.
 	sig := fmt.Sprintf("%s%s%s", s.Timestamp, s.Channel, strings.Join(s.ProductIds, ","))
-	s.Signature = string(sign(sig, s.SecretKey))
+	s.Signature = string(SignHmacSha256(sig, s.SecretKey))
 }
 
-func (s *WsChannel) setTimestamp() {
+func (s *WebsocketChannel) setTimestamp() {
 	s.Timestamp = fmt.Sprintf("%d", int(time.Now().Unix()))
-}
-
-func sign(str, secret string) []byte {
-	h := hmac.New(sha256.New, []byte(secret))
-	h.Write([]byte(str))
-	sha := h.Sum(nil)
-	return []byte(hex.EncodeToString(sha))
 }

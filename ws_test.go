@@ -30,7 +30,7 @@ func TestClient_Close(t *testing.T) {
 	cl, err := NewWsClient(WsClientConfig{
 		Url:          "https://badurl.com",
 		ReadChannel:  chRead,
-		WsChannels:   []WsChannel{},
+		WsChannels:   []WebsocketChannel{},
 		OnConnect:    func() {},
 		OnDisconnect: func() {},
 		OnReconnect:  onRecon,
@@ -80,7 +80,7 @@ func TestClient_Reconnecting(t *testing.T) {
 	cl, err := NewWsClient(WsClientConfig{
 		Url:          makeWsProto(s.URL),
 		ReadChannel:  chRead,
-		WsChannels:   []WsChannel{},
+		WsChannels:   []WebsocketChannel{},
 		OnConnect:    onConn,
 		OnDisconnect: func() {},
 		OnReconnect:  onRecon,
@@ -127,7 +127,7 @@ func TestWsClient_Backoff_ShouldNotTriggerRecon(t *testing.T) {
 	cl, err := NewWsClient(WsClientConfig{
 		Url:          makeWsProto(s.URL),
 		ReadChannel:  chRead,
-		WsChannels:   []WsChannel{},
+		WsChannels:   []WebsocketChannel{},
 		OnConnect:    func() {},
 		OnDisconnect: func() {},
 		OnReconnect: func() {
@@ -180,7 +180,7 @@ func TestWsClient_Backoff_ShouldTriggerRecon(t *testing.T) {
 	cl, err := NewWsClient(WsClientConfig{
 		Url:          makeWsProto(s.URL),
 		ReadChannel:  chRead,
-		WsChannels:   []WsChannel{},
+		WsChannels:   []WebsocketChannel{},
 		OnConnect:    onConn,
 		OnDisconnect: onDisc,
 		OnReconnect:  onRecon,
