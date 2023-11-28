@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/imroc/req/v3"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -13,10 +14,13 @@ type HttpClient interface {
 }
 
 type ApiClient struct {
-	apiKey     string
-	secretKey  string
-	client     *req.Client
-	httpClient HttpClient
+	apiKey          string
+	secretKey       string
+	client          *req.Client
+	httpClient      HttpClient
+	baseUrlV3       string
+	baseUrlV2       string
+	baseExchangeUrl string
 }
 
 func (c *ApiClient) GetClient() *req.Client {
@@ -39,21 +43,70 @@ var (
 func NewApiClient(apiKey, secretKey string, clients ...HttpClient) *ApiClient {
 	if clients != nil && len(clients) > 0 {
 		return &ApiClient{
-			apiKey:     apiKey,
-			secretKey:  secretKey,
-			client:     newClient(apiKey, secretKey),
-			httpClient: clients[0],
+			apiKey:          apiKey,
+			secretKey:       secretKey,
+			client:          newClient(apiKey, secretKey),
+			httpClient:      clients[0],
+			baseUrlV3:       "https://api.coinbase.com/api/v3",
+			baseUrlV2:       "https://api.coinbase.com/api/v2",
+			baseExchangeUrl: "https://api.exchange.coinbase.com",
 		}
 	}
 
 	client := newClient(apiKey, secretKey)
 
 	return &ApiClient{
-		apiKey:     apiKey,
-		secretKey:  secretKey,
-		client:     client,
-		httpClient: &ReqClient{client: client},
+		apiKey:          apiKey,
+		secretKey:       secretKey,
+		client:          client,
+		httpClient:      &ReqClient{client: client},
+		baseUrlV3:       "https://api.coinbase.com/api/v3",
+		baseUrlV2:       "https://api.coinbase.com/api/v2",
+		baseExchangeUrl: "https://api.exchange.coinbase.com",
 	}
+}
+
+// SetSandboxUrls sets the base URLs to the sandbox environment. Note: The sandbox for Advanced Trading is not yet available. This method will be revisited when the sandbox is available.
+func (c *ApiClient) SetSandboxUrls() {
+	c.baseUrlV3 = "https://api-public.sandbox.pro.coinbase.com"
+	c.baseUrlV2 = "https://api-public.sandbox.pro.coinbase.com"
+	c.baseExchangeUrl = "https://api-public.sandbox.exchange.coinbase.com"
+}
+
+// SetBaseUrlV3 sets the base URL for the Coinbase Advanced Trading API.
+func (c *ApiClient) SetBaseUrlV3(url string) {
+	c.baseUrlV3 = url
+}
+
+func (c *ApiClient) makeV3Url(path string) string {
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+	return fmt.Sprintf("%s/%s", c.baseUrlV3, path)
+}
+
+// SetBaseUrlV2 sets the base URL for the Sign In With Coinbase APIs.
+func (c *ApiClient) SetBaseUrlV2(url string) {
+	c.baseUrlV2 = url
+}
+
+func (c *ApiClient) makeV2Url(path string) string {
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+	return fmt.Sprintf("%s/%s", c.baseUrlV2, path)
+}
+
+// SetBaseExchangeUrl sets the base URL for the Coinbase Exchange API.
+func (c *ApiClient) SetBaseExchangeUrl(url string) {
+	c.baseExchangeUrl = url
+}
+
+func (c *ApiClient) makeExchangeUrl(path string) string {
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+	return fmt.Sprintf("%s/%s", c.baseExchangeUrl, path)
 }
 
 func (c *ApiClient) get(url string, out interface{}) error {

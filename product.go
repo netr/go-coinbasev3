@@ -7,7 +7,7 @@ import (
 
 // GetProduct get information on a single product by product ID.
 func (c *ApiClient) GetProduct(productId string) (Product, error) {
-	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/products/%s", productId)
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/products/%s", productId))
 
 	var data Product
 	resp, err := c.httpClient.Get(u)
@@ -93,7 +93,7 @@ type PerpetualDetails struct {
 
 // GetProducts gets a list of available currency pairs for trading.
 func (c *ApiClient) GetProducts() ([]Products, error) {
-	u := "https://api.exchange.coinbase.com/products"
+	u := c.makeExchangeUrl("/products")
 
 	var data []Products
 	resp, err := c.httpClient.Get(u)
@@ -150,7 +150,7 @@ const (
 
 // GetProductCandles get rates for a single product by product ID, grouped in buckets.
 func (c *ApiClient) GetProductCandles(productId, start, end string, granularity Granularity) ([]ProductCandles, error) {
-	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/products/%s/candles?start=%s&end=%s&granularity=%s", productId, start, end, granularity)
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/products/%s/candles?start=%s&end=%s&granularity=%s", productId, start, end, granularity))
 
 	var data ProductCandlesData
 	resp, err := c.httpClient.Get(u)
@@ -185,7 +185,7 @@ type ProductCandles struct {
 
 // GetMarketTrades get snapshot information, by product ID, about the last trades (ticks), best bid/ask, and 24h volume.
 func (c *ApiClient) GetMarketTrades(productId string, limit int32) (MarketTradesData, error) {
-	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/products/%s/ticker?limit=%d", productId, limit)
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/products/%s/ticker?limit=%d", productId, limit))
 
 	var data MarketTradesData
 	resp, err := c.httpClient.Get(u)
@@ -213,7 +213,7 @@ type MarketTradesData struct {
 
 // GetProductBook get a list of bids/asks for a single product. The amount of detail shown can be customized with the limit parameter.
 func (c *ApiClient) GetProductBook(productId string, limit int32) (ProductBookData, error) {
-	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/product_book?product_id=%s&limit=%d", productId, limit)
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/product_book?product_id=%s&limit=%d", productId, limit))
 
 	var data ProductBookData
 	if c.get(u, &data) != nil {
@@ -247,7 +247,7 @@ func (c *ApiClient) GetBestBidAsk(productIds []string) (BestBidAskData, error) {
 		return BestBidAskData{}, fmt.Errorf("no product ids provided")
 	}
 
-	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/best_bid_ask?%s", query)
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/best_bid_ask?%s", query))
 	var data BestBidAskData
 	if c.get(u, &data) != nil {
 		return data, ErrFailedToUnmarshal
