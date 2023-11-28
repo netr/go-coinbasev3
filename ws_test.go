@@ -28,6 +28,8 @@ func TestClient_Close(t *testing.T) {
 	}
 
 	cl, err := NewWsClient(WsClientConfig{
+		ApiKey:       "badkey",
+		SecretKey:    "badsecret",
 		Url:          "https://badurl.com",
 		ReadChannel:  chRead,
 		WsChannels:   []WebsocketChannel{},
@@ -78,6 +80,8 @@ func TestClient_Reconnecting(t *testing.T) {
 
 	chRead := make(chan []byte)
 	cl, err := NewWsClient(WsClientConfig{
+		ApiKey:       "badkey",
+		SecretKey:    "badsecret",
 		Url:          makeWsProto(s.URL),
 		ReadChannel:  chRead,
 		WsChannels:   []WebsocketChannel{},
@@ -125,6 +129,8 @@ func TestWsClient_Backoff_ShouldNotTriggerRecon(t *testing.T) {
 
 	chRead := make(chan []byte)
 	cl, err := NewWsClient(WsClientConfig{
+		ApiKey:       "badkey",
+		SecretKey:    "badsecret",
 		Url:          makeWsProto(s.URL),
 		ReadChannel:  chRead,
 		WsChannels:   []WebsocketChannel{},
@@ -178,6 +184,8 @@ func TestWsClient_Backoff_ShouldTriggerRecon(t *testing.T) {
 
 	chRead := make(chan []byte)
 	cl, err := NewWsClient(WsClientConfig{
+		ApiKey:       "badkey",
+		SecretKey:    "badsecret",
 		Url:          makeWsProto(s.URL),
 		ReadChannel:  chRead,
 		WsChannels:   []WebsocketChannel{},
