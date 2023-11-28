@@ -20,12 +20,12 @@ Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-
     - [ ] List Orders
     - [ ] List Fills
     - [ ] Get Order
-    - [ ] Get Best Bid/Ask
-    - [ ] Get Product Book
-    - [ ] List Products
-    - [ ] Get Product
-    - [ ] Get Product Candles
-    - [ ] Get Market Trades
+    - [X] Get Best Bid/Ask
+    - [X] Get Product Book
+    - [X] List Products
+    - [X] Get Product
+    - [X] Get Product Candles
+    - [X] Get Market Trades
     - [ ] Get Transactions Summary
 - [ ] Sign In with Coinbase API v2
   - [ ] Show an Account

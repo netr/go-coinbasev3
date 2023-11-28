@@ -20,10 +20,10 @@ var (
 // NewApiClient creates a new Coinbase API client. The API key and secret key are used to sign requests. The default timeout is 10 seconds. The default retry count is 3. The default retry backoff interval is 1 second to 5 seconds.
 func NewApiClient(apiKey, secretKey string) *ApiClient {
 	client := req.C().
-		SetTimeout(time.Second*10).
-		SetUserAgent("GoCoinbaseV3/1.0.0").
-		SetCommonRetryCount(3).
-		SetCommonRetryBackoffInterval(1*time.Second, 5*time.Second)
+		SetTimeout(time.Second * 10).
+		SetUserAgent("GoCoinbaseV3/1.0.0")
+	//SetCommonRetryCount(3).
+	//SetCommonRetryBackoffInterval(1*time.Second, 5*time.Second)
 
 	// TODO: figure out how to do this where we can use PathParam, QueryParam, etc.
 	client.OnBeforeRequest(func(client *req.Client, req *req.Request) error {

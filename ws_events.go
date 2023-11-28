@@ -282,6 +282,8 @@ type MarketTrade struct {
 	Size      string    `json:"size" mapstructure:"size"`
 	Side      string    `json:"side" mapstructure:"side"`
 	Time      time.Time `json:"time" mapstructure:"time"`
+	Bid       string    `json:"bid"  mapstructure:"bid"`
+	Ask       string    `json:"ask"  mapstructure:"ask"`
 }
 
 type StatusEvent struct {
