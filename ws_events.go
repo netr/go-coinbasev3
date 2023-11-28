@@ -20,7 +20,7 @@ func (e Event) IsTickerEvent() bool {
 	return e.Channel == string(ChannelTypeTicker) || e.Channel == string(ChannelTypeTickerBatch)
 }
 
-// GetTickerEvent converts a generic event to a ticker event. Returns an error if the event is not a ticker event.
+// GetTickerEvent converts a generic event to a ticker/ticket_batch event. Returns an error if the event is not a ticker/ticket_batch event.
 func (e Event) GetTickerEvent() (TickerEvent, error) {
 	var evt TickerEvent
 	evt.Event = e
@@ -36,6 +36,7 @@ func (e Event) GetTickerEvent() (TickerEvent, error) {
 		if err != nil {
 			return evt, err
 		}
+
 		evt.Events = append(evt.Events, TickerEventType{
 			Type:    event.Type,
 			Tickers: event.Tickers,
@@ -45,12 +46,12 @@ func (e Event) GetTickerEvent() (TickerEvent, error) {
 	return evt, nil
 }
 
-// IsHeartbeatsEvent returns true if the event is a heartbeats event.
+// IsHeartbeatsEvent returns true if the event is a heartbeat event.
 func (e Event) IsHeartbeatsEvent() bool {
 	return e.Channel == string(ChannelTypeHeartbeats)
 }
 
-// GetHeartbeatsEvent converts a generic event to a heartbeats event. Returns an error if the event is not a ticker event.
+// GetHeartbeatsEvent converts a generic event to a heartbeat event. Returns an error if the event is not a heartbeat event.
 func (e Event) GetHeartbeatsEvent() (HeartbeatsEvent, error) {
 	var evt HeartbeatsEvent
 	for _, ev := range e.Events {
@@ -68,12 +69,12 @@ func (e Event) GetHeartbeatsEvent() (HeartbeatsEvent, error) {
 	return evt, nil
 }
 
-// IsCandlesEvent returns true if the event is a candles event.
+// IsCandlesEvent returns true if the event is a candle event.
 func (e Event) IsCandlesEvent() bool {
 	return e.Channel == string(ChannelTypeCandles)
 }
 
-// GetCandlesEvent converts a generic event to a candles event. Returns an error if the event is not a ticker event.
+// GetCandlesEvent converts a generic event to a candle event. Returns an error if the event is not a candle event.
 func (e Event) GetCandlesEvent() (CandlesEvent, error) {
 	var evt CandlesEvent
 	for _, ev := range e.Events {
@@ -101,7 +102,7 @@ func (e Event) IsMarketTradesEvent() bool {
 	return e.Channel == string(ChannelTypeMarketTrades)
 }
 
-// GetMarketTradesEvent converts a generic event to a market trades event. Returns an error if the event is not a ticker event.
+// GetMarketTradesEvent converts a generic event to a market trades event. Returns an error if the event is not a market trades event.
 func (e Event) GetMarketTradesEvent() (MarketTradesEvent, error) {
 	var evt MarketTradesEvent
 	for _, ev := range e.Events {
@@ -129,7 +130,7 @@ func (e Event) IsStatusEvent() bool {
 	return e.Channel == string(ChannelTypeStatus)
 }
 
-// GetStatusEvent converts a generic event to a status event. Returns an error if the event is not a ticker event.
+// GetStatusEvent converts a generic event to a status event. Returns an error if the event is not a status event.
 func (e Event) GetStatusEvent() (StatusEvent, error) {
 	var evt StatusEvent
 	for _, ev := range e.Events {
@@ -157,7 +158,7 @@ func (e Event) IsLevel2Event() bool {
 	return e.Channel == string(ChannelTypeLevel2)
 }
 
-// GetLevel2Event converts a generic event to a level 2 event. Returns an error if the event is not a ticker event.
+// GetLevel2Event converts a generic event to a level 2 event. Returns an error if the event is not level 2 event.
 func (e Event) GetLevel2Event() (Level2Event, error) {
 	var evt Level2Event
 	for _, ev := range e.Events {
@@ -174,7 +175,7 @@ func (e Event) GetLevel2Event() (Level2Event, error) {
 
 		evt.Events = append(evt.Events, Level2EventType{
 			Type:      event.Type,
-			ProductId: ne["product_id"].(string), // TODO: Fix this eventually
+			ProductId: event.ProductId,
 			Updates:   event.Updates,
 		})
 	}
@@ -187,7 +188,7 @@ func (e Event) IsUserEvent() bool {
 	return e.Channel == string(ChannelTypeUser)
 }
 
-// GetUserEvent converts a generic event to a user's order event. Returns an error if the event is not a ticker event.
+// GetUserEvent converts a generic event to a user's order event. Returns an error if the event is not a user's order event.
 func (e Event) GetUserEvent() (UserEvent, error) {
 	var evt UserEvent
 	for _, ev := range e.Events {
@@ -223,15 +224,15 @@ type TickerEventType struct {
 
 // Ticker represents a ticker from the websocket connection.
 type Ticker struct {
-	Type               string `json:"type"`
-	ProductId          string `json:"product_id"`
-	Price              string `json:"price"`
-	Volume24H          string `json:"volume_24_h"`
-	Low24H             string `json:"low_24_h"`
-	High24H            string `json:"high_24_h"`
-	Low52W             string `json:"low_52_w"`
-	High52W            string `json:"high_52_w"`
-	PricePercentChg24H string `json:"price_percent_chg_24_h"`
+	Type               string `json:"type" mapstructure:"type"`
+	ProductId          string `json:"product_id" mapstructure:"product_id"`
+	Price              string `json:"price" mapstructure:"price"`
+	Volume24H          string `json:"volume_24_h" mapstructure:"volume_24_h"`
+	Low24H             string `json:"low_24_h" mapstructure:"low_24_h"`
+	High24H            string `json:"high_24_h" mapstructure:"high_24_h"`
+	Low52W             string `json:"low_52_w" mapstructure:"low_52_w"`
+	High52W            string `json:"high_52_w" mapstructure:"high_52_w"`
+	PricePercentChg24H string `json:"price_percent_chg_24_h" mapstructure:"price_percent_chg_24_h"`
 }
 
 type HeartbeatsEvent struct {
@@ -240,8 +241,8 @@ type HeartbeatsEvent struct {
 }
 
 type HeartbeatsEventType struct {
-	CurrentTime      string `json:"current_time"`
-	HeartbeatCounter string `json:"heartbeat_counter"`
+	CurrentTime      string `json:"current_time" mapstructure:"current_time"`
+	HeartbeatCounter string `json:"heartbeat_counter" mapstructure:"heartbeat_counter"`
 }
 
 type CandlesEvent struct {
@@ -255,13 +256,13 @@ type CandlesEventType struct {
 }
 
 type Candle struct {
-	Start     string `json:"start"`
-	High      string `json:"high"`
-	Low       string `json:"low"`
-	Open      string `json:"open"`
-	Close     string `json:"close"`
-	Volume    string `json:"volume"`
-	ProductId string `json:"product_id"`
+	Start     string `json:"start" mapstructure:"start"`
+	High      string `json:"high" mapstructure:"high"`
+	Low       string `json:"low" mapstructure:"low"`
+	Open      string `json:"open" mapstructure:"open"`
+	Close     string `json:"close" mapstructure:"close"`
+	Volume    string `json:"volume" mapstructure:"volume"`
+	ProductId string `json:"product_id" mapstructure:"product_id"`
 }
 
 type MarketTradesEvent struct {
@@ -275,12 +276,12 @@ type MarketTradesEventType struct {
 }
 
 type MarketTrade struct {
-	TradeId   string    `json:"trade_id"`
-	ProductId string    `json:"product_id"`
-	Price     string    `json:"price"`
-	Size      string    `json:"size"`
-	Side      string    `json:"side"`
-	Time      time.Time `json:"time"`
+	TradeId   string    `json:"trade_id" mapstructure:"trade_id"`
+	ProductId string    `json:"product_id" mapstructure:"product_id"`
+	Price     string    `json:"price" mapstructure:"price"`
+	Size      string    `json:"size" mapstructure:"size"`
+	Side      string    `json:"side" mapstructure:"side"`
+	Time      time.Time `json:"time" mapstructure:"time"`
 }
 
 type StatusEvent struct {
@@ -294,16 +295,16 @@ type StatusEventType struct {
 }
 
 type ProductStatus struct {
-	ProductType    string `json:"product_type"`
-	Id             string `json:"id"`
-	BaseCurrency   string `json:"base_currency"`
-	QuoteCurrency  string `json:"quote_currency"`
-	BaseIncrement  string `json:"base_increment"`
-	QuoteIncrement string `json:"quote_increment"`
-	DisplayName    string `json:"display_name"`
-	Status         string `json:"status"`
-	StatusMessage  string `json:"status_message"`
-	MinMarketFunds string `json:"min_market_funds"`
+	ProductType    string `json:"product_type" mapstructure:"product_type"`
+	Id             string `json:"id" mapstructure:"id"`
+	BaseCurrency   string `json:"base_currency" mapstructure:"base_currency"`
+	QuoteCurrency  string `json:"quote_currency" mapstructure:"quote_currency"`
+	BaseIncrement  string `json:"base_increment" mapstructure:"base_increment"`
+	QuoteIncrement string `json:"quote_increment" mapstructure:"quote_increment"`
+	DisplayName    string `json:"display_name" mapstructure:"display_name"`
+	Status         string `json:"status" mapstructure:"status"`
+	StatusMessage  string `json:"status_message" mapstructure:"status_message"`
+	MinMarketFunds string `json:"min_market_funds" mapstructure:"min_market_funds"`
 }
 
 type Level2Event struct {
@@ -312,16 +313,16 @@ type Level2Event struct {
 }
 
 type Level2EventType struct {
-	Type      string         `json:"type"`
-	ProductId string         `json:"product_id"`
-	Updates   []Level2Update `json:"updates"`
+	Type      string         `json:"type" mapstructure:"type"`
+	ProductId string         `json:"product_id" mapstructure:"product_id"`
+	Updates   []Level2Update `json:"updates" mapstructure:"updates"`
 }
 
 type Level2Update struct {
-	Side        string    `json:"side"`
-	EventTime   time.Time `json:"event_time"`
-	PriceLevel  string    `json:"price_level"`
-	NewQuantity string    `json:"new_quantity"`
+	Side        string    `json:"side" mapstructure:"side"`
+	EventTime   time.Time `json:"event_time" mapstructure:"event_time"`
+	PriceLevel  string    `json:"price_level" mapstructure:"price_level"`
+	NewQuantity string    `json:"new_quantity" mapstructure:"new_quantity"`
 }
 
 type UserEvent struct {
@@ -335,15 +336,15 @@ type UserEventType struct {
 }
 
 type UserOrder struct {
-	OrderId            string    `json:"order_id"`
-	ClientOrderId      string    `json:"client_order_id"`
-	CumulativeQuantity string    `json:"cumulative_quantity"`
-	LeavesQuantity     string    `json:"leaves_quantity"`
-	AvgPrice           string    `json:"avg_price"`
-	TotalFees          string    `json:"total_fees"`
-	Status             string    `json:"status"`
-	ProductId          string    `json:"product_id"`
-	CreationTime       time.Time `json:"creation_time"`
-	OrderSide          string    `json:"order_side"`
-	OrderType          string    `json:"order_type"`
+	OrderId            string    `json:"order_id" mapstructure:"order_id"`
+	ClientOrderId      string    `json:"client_order_id" mapstructure:"client_order_id"`
+	CumulativeQuantity string    `json:"cumulative_quantity" mapstructure:"cumulative_quantity"`
+	LeavesQuantity     string    `json:"leaves_quantity" mapstructure:"leaves_quantity"`
+	AvgPrice           string    `json:"avg_price" mapstructure:"avg_price"`
+	TotalFees          string    `json:"total_fees" mapstructure:"total_fees"`
+	Status             string    `json:"status" mapstructure:"status"`
+	ProductId          string    `json:"product_id" mapstructure:"product_id"`
+	CreationTime       time.Time `json:"creation_time" mapstructure:"creation_time"`
+	OrderSide          string    `json:"order_side" mapstructure:"order_side"`
+	OrderType          string    `json:"order_type" mapstructure:"order_type"`
 }
