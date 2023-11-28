@@ -10,13 +10,18 @@ func (c *ApiClient) GetProduct(productId string) (Product, error) {
 	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/products/%s", productId)
 
 	var data Product
-	resp, err := c.client.R().SetSuccessResult(&data).Get(u)
+	resp, err := c.httpClient.Get(u)
 	if err != nil {
 		return data, err
 	}
 
 	if !resp.IsSuccessState() {
 		return data, ErrFailedToUnmarshal
+	}
+
+	err = resp.Unmarshal(&data)
+	if err != nil {
+		return data, err
 	}
 
 	return data, nil
@@ -91,15 +96,18 @@ func (c *ApiClient) GetProducts() ([]Products, error) {
 	u := "https://api.exchange.coinbase.com/products"
 
 	var data []Products
-	resp, err := c.client.R().
-		SetSuccessResult(&data).
-		Get(u)
+	resp, err := c.httpClient.Get(u)
 	if err != nil {
 		return nil, err
 	}
 
 	if !resp.IsSuccessState() {
 		return nil, ErrFailedToUnmarshal
+	}
+
+	err = resp.Unmarshal(&data)
+	if err != nil {
+		return nil, err
 	}
 
 	return data, nil
@@ -145,13 +153,18 @@ func (c *ApiClient) GetProductCandles(productId, start, end string, granularity 
 	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/products/%s/candles?start=%s&end=%s&granularity=%s", productId, start, end, granularity)
 
 	var data ProductCandlesData
-	resp, err := c.client.R().SetSuccessResult(&data).Get(u)
+	resp, err := c.httpClient.Get(u)
 	if err != nil {
 		return data.Candles, err
 	}
 
 	if !resp.IsSuccessState() {
 		return data.Candles, ErrFailedToUnmarshal
+	}
+
+	err = resp.Unmarshal(&data)
+	if err != nil {
+		return data.Candles, err
 	}
 
 	return data.Candles, nil
@@ -175,13 +188,18 @@ func (c *ApiClient) GetMarketTrades(productId string, limit int32) (MarketTrades
 	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/products/%s/ticker?limit=%d", productId, limit)
 
 	var data MarketTradesData
-	resp, err := c.client.R().SetSuccessResult(&data).Get(u)
+	resp, err := c.httpClient.Get(u)
 	if err != nil {
 		return data, err
 	}
 
 	if !resp.IsSuccessState() {
 		return data, ErrFailedToUnmarshal
+	}
+
+	err = resp.Unmarshal(&data)
+	if err != nil {
+		return MarketTradesData{}, err
 	}
 
 	return data, nil
@@ -198,15 +216,9 @@ func (c *ApiClient) GetProductBook(productId string, limit int32) (ProductBookDa
 	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/product_book?product_id=%s&limit=%d", productId, limit)
 
 	var data ProductBookData
-	resp, err := c.client.R().SetSuccessResult(&data).Get(u)
-	if err != nil {
-		return data, err
-	}
-
-	if !resp.IsSuccessState() {
+	if c.get(u, &data) != nil {
 		return data, ErrFailedToUnmarshal
 	}
-
 	return data, nil
 }
 
@@ -236,17 +248,10 @@ func (c *ApiClient) GetBestBidAsk(productIds []string) (BestBidAskData, error) {
 	}
 
 	u := fmt.Sprintf("https://api.coinbase.com/api/v3/brokerage/best_bid_ask?%s", query)
-
 	var data BestBidAskData
-	resp, err := c.client.R().SetSuccessResult(&data).Get(u)
-	if err != nil {
-		return data, err
-	}
-
-	if !resp.IsSuccessState() {
+	if c.get(u, &data) != nil {
 		return data, ErrFailedToUnmarshal
 	}
-
 	return data, nil
 }
 
