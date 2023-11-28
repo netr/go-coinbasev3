@@ -13,7 +13,7 @@ import (
 type ChannelType string
 
 const (
-	ChannelTypeHeartbeats   ChannelType = "heartbeat"
+	ChannelTypeHeartbeats   ChannelType = "heartbeats"
 	ChannelTypeCandles      ChannelType = "candles"
 	ChannelTypeStatus       ChannelType = "status"
 	ChannelTypeTicker       ChannelType = "ticker"
@@ -30,31 +30,40 @@ const (
 	SubTypeUnsubscribe SubType = "unsubscribe"
 )
 
-type WsFeedSubscription struct {
+type WsChannel struct {
 	Type       SubType     `json:"type"`
 	ProductIds []string    `json:"product_ids"`
 	Channel    ChannelType `json:"channel"`
 	Signature  string      `json:"signature"`
 	ApiKey     string      `json:"api_key"`
 	SecretKey  string      `json:"-"`
-	Timestamp  int         `json:"timestamp"`
+	Timestamp  string      `json:"timestamp"`
 }
 
-func NewWsFeedSubscription(subType SubType, productIds []string, channel ChannelType, apiKey, secretKey string) *WsFeedSubscription {
-	s := &WsFeedSubscription{
+func NewWsChannel(subType SubType, productIds []string, channel ChannelType) WsChannel {
+	s := WsChannel{
 		Type:       subType,
 		ProductIds: productIds,
 		Channel:    channel,
-		ApiKey:     apiKey,
-		SecretKey:  secretKey,
 	}
-	s.setTimestamp()
-	s.setSignature()
-
 	return s
 }
 
-func (s *WsFeedSubscription) Marshal() []byte {
+func NewWsChannelSub(productIds []string, channel ChannelType) WsChannel {
+	return NewWsChannel(SubTypeSubscribe, productIds, channel)
+}
+
+func NewWsChannelUnsub(productIds []string, channel ChannelType) WsChannel {
+	return NewWsChannel(SubTypeUnsubscribe, productIds, channel)
+}
+
+func (s *WsChannel) marshal(apiKey, secretKey string) []byte {
+	s.ApiKey = apiKey
+	s.SecretKey = secretKey
+
+	s.setTimestamp()
+	s.setSignature()
+
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil
@@ -63,15 +72,14 @@ func (s *WsFeedSubscription) Marshal() []byte {
 	return b
 }
 
-func (s *WsFeedSubscription) setSignature() {
+func (s *WsChannel) setSignature() {
 	// Concatenating and comma-separating the timestamp, channel name, and product Ids, for example: 1660838876level2ETH-USD,ETH-EUR.
-	sig := fmt.Sprintf("%d%s%s", s.Timestamp, s.Channel, strings.Join(s.ProductIds, ","))
+	sig := fmt.Sprintf("%s%s%s", s.Timestamp, s.Channel, strings.Join(s.ProductIds, ","))
 	s.Signature = string(sign(sig, s.SecretKey))
 }
 
-func (s *WsFeedSubscription) setTimestamp() {
-	s.Timestamp = int(time.Now().Unix())
-	s.setSignature()
+func (s *WsChannel) setTimestamp() {
+	s.Timestamp = fmt.Sprintf("%d", int(time.Now().Unix()))
 }
 
 func sign(str, secret string) []byte {

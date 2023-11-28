@@ -16,23 +16,26 @@ const (
 )
 
 var (
-	ErrNoURL              = fmt.Errorf("no url provided")
 	ErrInvalidReadChannel = fmt.Errorf("read channel is invalid")
+	ErrNoApiKey           = fmt.Errorf("no api key provided")
+	ErrNoSecretKey        = fmt.Errorf("no secret key provided")
 	ErrNotConnected       = fmt.Errorf("not connected")
 )
 
 // WsClient is an automatically reconnecting websocket client.
 type WsClient struct {
-	conn             *websocket.Conn
-	url              string
-	subscriptionData []byte
-	chans            channels
-	cbs              callbacks
-	isShutdown       bool
-	useBackoff       bool
-	debug            bool
-	ctx              context.Context
-	cancel           context.CancelFunc
+	conn       *websocket.Conn
+	url        string
+	wsChannels []WsChannel
+	chans      channels
+	cbs        callbacks
+	isShutdown bool
+	useBackoff bool
+	debug      bool
+	apiKey     string
+	secretKey  string
+	ctx        context.Context
+	cancel     context.CancelFunc
 }
 
 // channels contains the read channel given by the developer and the internal reconnection channel.
@@ -50,23 +53,32 @@ type callbacks struct {
 
 // WsClientConfig is the configuration struct for creating a new websocket client.
 type WsClientConfig struct {
-	Url              string
-	ReadChannel      chan []byte
-	SubscriptionData []byte
-	OnConnect        func()
-	OnDisconnect     func()
-	OnReconnect      func()
-	UseBackoff       bool
-	Debug            bool
+	Url          string      // optional. defaults to "wss://advanced-trade-ws.coinbase.com"
+	ReadChannel  chan []byte // required for receiving messages from the websocket connection
+	WsChannels   []WsChannel // required for subscribing to channels on the websocket connection
+	ApiKey       string      // required for signing websocket messages
+	SecretKey    string      // required for signing websocket messages
+	OnConnect    func()      // optional. called when the websocket connection is established
+	OnDisconnect func()      // optional. called when the websocket connection is closed
+	OnReconnect  func()      // optional. called when the websocket connection is re-established
+	UseBackoff   bool        // optional. defaults to false. uses an exponential backoff strategy with jitter
+	Debug        bool        // optional. defaults to false. prints debug messages
 }
 
 // tryValidate validates the websocket client configuration.
 func (c *WsClientConfig) tryValidate() error {
-	if c.Url == "" {
-		return ErrNoURL
+	if c.ApiKey == "" {
+		return ErrNoApiKey
+	}
+	if c.SecretKey == "" {
+		return ErrNoSecretKey
 	}
 	if c.ReadChannel == nil {
 		return ErrInvalidReadChannel
+	}
+
+	if c.Url == "" {
+		c.Url = "wss://advanced-trade-ws.coinbase.com"
 	}
 	if c.OnConnect == nil {
 		c.OnConnect = func() {}
@@ -101,11 +113,13 @@ func NewWsClient(cfg WsClientConfig) (*WsClient, error) {
 			onDisconnect: cfg.OnDisconnect,
 			onReconnect:  cfg.OnReconnect,
 		},
-		subscriptionData: cfg.SubscriptionData,
-		ctx:              ctx,
-		cancel:           cancel,
-		useBackoff:       cfg.UseBackoff,
-		debug:            cfg.Debug,
+		wsChannels: cfg.WsChannels,
+		apiKey:     cfg.ApiKey,
+		secretKey:  cfg.SecretKey,
+		ctx:        ctx,
+		cancel:     cancel,
+		useBackoff: cfg.UseBackoff,
+		debug:      cfg.Debug,
 	}
 
 	go c.initReconnectChannel()
@@ -127,12 +141,10 @@ func (c *WsClient) ConnectWithUrl(url string) (*websocket.Conn, error) {
 	}
 	c.conn = conn
 
-	if len(c.subscriptionData) > 0 {
-		err = c.Write(c.subscriptionData)
-		if err != nil {
-			_ = c.conn.Close()
-			return nil, err
-		}
+	err = c.subscribeToChannels()
+	if err != nil {
+		_ = c.conn.Close()
+		return nil, err
 	}
 
 	c.cbs.onConnect()
@@ -140,10 +152,24 @@ func (c *WsClient) ConnectWithUrl(url string) (*websocket.Conn, error) {
 	return conn, nil
 }
 
+// subscribeToChannels subscribes to the provided channels on the websocket connection.
+func (c *WsClient) subscribeToChannels() error {
+	if len(c.wsChannels) > 0 {
+		for ch := range c.wsChannels {
+			err := c.Write(c.wsChannels[ch].marshal(c.apiKey, c.secretKey))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Connect connects to the websocket server.
 func (c *WsClient) Connect() (*websocket.Conn, error) {
 	if c.url == "" {
-		return nil, ErrNoURL
+		c.url = "wss://advanced-trade-ws.coinbase.com" // default url
 	}
 	return c.ConnectWithUrl(c.url)
 }
@@ -264,4 +290,32 @@ func calculateBackoff(currentBackoff, maxBackoff time.Duration) time.Duration {
 		return maxBackoff
 	}
 	return nextBackoff
+}
+
+// TickerMessage represents a ticker message from the websocket connection.
+type TickerMessage struct {
+	Channel     string        `json:"channel"`
+	ClientId    string        `json:"client_id"`
+	Timestamp   time.Time     `json:"timestamp"`
+	SequenceNum int           `json:"sequence_num"`
+	Events      []TickerEvent `json:"events"`
+}
+
+// TickerEvent represents a ticker event from the websocket connection.
+type TickerEvent struct {
+	Type    string   `json:"type"`
+	Tickers []Ticker `json:"tickers"`
+}
+
+// Ticker represents a ticker from the websocket connection.
+type Ticker struct {
+	Type               string `json:"type"`
+	ProductId          string `json:"product_id"`
+	Price              string `json:"price"`
+	Volume24H          string `json:"volume_24_h"`
+	Low24H             string `json:"low_24_h"`
+	High24H            string `json:"high_24_h"`
+	Low52W             string `json:"low_52_w"`
+	High52W            string `json:"high_52_w"`
+	PricePercentChg24H string `json:"price_percent_chg_24_h"`
 }
