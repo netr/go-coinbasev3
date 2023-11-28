@@ -1,6 +1,9 @@
 package coinbasev3
 
-import "time"
+import (
+	"github.com/mitchellh/mapstructure"
+	"time"
+)
 
 // Event represents a standard event message from the websocket connection.
 type Event struct {
@@ -20,15 +23,23 @@ func (e Event) IsTickerEvent() bool {
 // GetTickerEvent converts a generic event to a ticker event. Returns an error if the event is not a ticker event.
 func (e Event) GetTickerEvent() (TickerEvent, error) {
 	var evt TickerEvent
+	evt.Event = e
+
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			Type    string   `json:"type"`
-			Tickers []Ticker `json:"tickers"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		var event TickerEventType
+		err := mapstructure.Decode(ne, &event)
+		if err != nil {
+			return evt, err
+		}
+		evt.Events = append(evt.Events, TickerEventType{
+			Type:    event.Type,
+			Tickers: event.Tickers,
+		})
 	}
 
 	return evt, nil
@@ -43,14 +54,15 @@ func (e Event) IsHeartbeatsEvent() bool {
 func (e Event) GetHeartbeatsEvent() (HeartbeatsEvent, error) {
 	var evt HeartbeatsEvent
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			CurrentTime      string `json:"current_time"`
-			HeartbeatCounter string `json:"heartbeat_counter"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		evt.Events = append(evt.Events, HeartbeatsEventType{
+			CurrentTime:      ne["current_time"].(string),
+			HeartbeatCounter: ne["heartbeat_counter"].(string),
+		})
 	}
 
 	return evt, nil
@@ -65,14 +77,20 @@ func (e Event) IsCandlesEvent() bool {
 func (e Event) GetCandlesEvent() (CandlesEvent, error) {
 	var evt CandlesEvent
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			Type    string   `json:"type"`
-			Candles []Candle `json:"candles"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		var event CandlesEventType
+		err := mapstructure.Decode(ne, &event)
+		if err != nil {
+			return evt, err
+		}
+		evt.Events = append(evt.Events, CandlesEventType{
+			Type:    event.Type,
+			Candles: event.Candles,
+		})
 	}
 
 	return evt, nil
@@ -87,14 +105,20 @@ func (e Event) IsMarketTradesEvent() bool {
 func (e Event) GetMarketTradesEvent() (MarketTradesEvent, error) {
 	var evt MarketTradesEvent
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			Type   string        `json:"type"`
-			Trades []MarketTrade `json:"trades"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		var event MarketTradesEventType
+		err := mapstructure.Decode(ne, &event)
+		if err != nil {
+			return evt, err
+		}
+		evt.Events = append(evt.Events, MarketTradesEventType{
+			Type:   event.Type,
+			Trades: event.Trades,
+		})
 	}
 
 	return evt, nil
@@ -109,14 +133,20 @@ func (e Event) IsStatusEvent() bool {
 func (e Event) GetStatusEvent() (StatusEvent, error) {
 	var evt StatusEvent
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			Type     string          `json:"type"`
-			Products []ProductStatus `json:"products"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		var event StatusEventType
+		err := mapstructure.Decode(ne, &event)
+		if err != nil {
+			return evt, err
+		}
+		evt.Events = append(evt.Events, StatusEventType{
+			Type:     event.Type,
+			Products: event.Products,
+		})
 	}
 
 	return evt, nil
@@ -131,15 +161,22 @@ func (e Event) IsLevel2Event() bool {
 func (e Event) GetLevel2Event() (Level2Event, error) {
 	var evt Level2Event
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			Type      string         `json:"type"`
-			ProductId string         `json:"product_id"`
-			Updates   []Level2Update `json:"updates"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		var event Level2EventType
+		err := mapstructure.Decode(ne, &event)
+		if err != nil {
+			return evt, err
+		}
+
+		evt.Events = append(evt.Events, Level2EventType{
+			Type:      event.Type,
+			ProductId: ne["product_id"].(string), // TODO: Fix this eventually
+			Updates:   event.Updates,
+		})
 	}
 
 	return evt, nil
@@ -154,14 +191,20 @@ func (e Event) IsUserEvent() bool {
 func (e Event) GetUserEvent() (UserEvent, error) {
 	var evt UserEvent
 	for _, ev := range e.Events {
-		ne, ok := ev.(struct {
-			Type   string      `json:"type"`
-			Orders []UserOrder `json:"orders"`
-		})
+		ne, ok := ev.(map[string]interface{})
 		if !ok {
 			return evt, ErrFailedToUnmarshal
 		}
-		evt.Events = append(evt.Events, ne)
+
+		var event UserEventType
+		err := mapstructure.Decode(ne, &event)
+		if err != nil {
+			return evt, err
+		}
+		evt.Events = append(evt.Events, UserEventType{
+			Type:   event.Type,
+			Orders: event.Orders,
+		})
 	}
 
 	return evt, nil
@@ -170,10 +213,12 @@ func (e Event) GetUserEvent() (UserEvent, error) {
 // TickerEvent represents a ticker event message from the websocket connection.
 type TickerEvent struct {
 	Event
-	Events []struct {
-		Type    string   `json:"type"`
-		Tickers []Ticker `json:"tickers"`
-	} `json:"events"`
+	Events []TickerEventType `json:"events"`
+}
+
+type TickerEventType struct {
+	Type    string   `json:"type"`
+	Tickers []Ticker `json:"tickers"`
 }
 
 // Ticker represents a ticker from the websocket connection.
@@ -191,18 +236,22 @@ type Ticker struct {
 
 type HeartbeatsEvent struct {
 	Event
-	Events []struct {
-		CurrentTime      string `json:"current_time"`
-		HeartbeatCounter string `json:"heartbeat_counter"`
-	} `json:"events"`
+	Events []HeartbeatsEventType `json:"events"`
+}
+
+type HeartbeatsEventType struct {
+	CurrentTime      string `json:"current_time"`
+	HeartbeatCounter string `json:"heartbeat_counter"`
 }
 
 type CandlesEvent struct {
 	Event
-	Events []struct {
-		Type    string   `json:"type"`
-		Candles []Candle `json:"candles"`
-	} `json:"events"`
+	Events []CandlesEventType `json:"events"`
+}
+
+type CandlesEventType struct {
+	Type    string   `json:"type"`
+	Candles []Candle `json:"candles"`
 }
 
 type Candle struct {
@@ -217,10 +266,12 @@ type Candle struct {
 
 type MarketTradesEvent struct {
 	Event
-	Events []struct {
-		Type   string        `json:"type"`
-		Trades []MarketTrade `json:"trades"`
-	} `json:"events"`
+	Events []MarketTradesEventType `json:"events"`
+}
+
+type MarketTradesEventType struct {
+	Type   string        `json:"type"`
+	Trades []MarketTrade `json:"trades"`
 }
 
 type MarketTrade struct {
@@ -234,10 +285,12 @@ type MarketTrade struct {
 
 type StatusEvent struct {
 	Event
-	Events []struct {
-		Type     string          `json:"type"`
-		Products []ProductStatus `json:"products"`
-	} `json:"events"`
+	Events []StatusEventType `json:"events"`
+}
+
+type StatusEventType struct {
+	Type     string          `json:"type"`
+	Products []ProductStatus `json:"products"`
 }
 
 type ProductStatus struct {
@@ -255,11 +308,13 @@ type ProductStatus struct {
 
 type Level2Event struct {
 	Event
-	Events []struct {
-		Type      string         `json:"type"`
-		ProductId string         `json:"product_id"`
-		Updates   []Level2Update `json:"updates"`
-	} `json:"events"`
+	Events []Level2EventType `json:"events"`
+}
+
+type Level2EventType struct {
+	Type      string         `json:"type"`
+	ProductId string         `json:"product_id"`
+	Updates   []Level2Update `json:"updates"`
 }
 
 type Level2Update struct {
@@ -271,10 +326,12 @@ type Level2Update struct {
 
 type UserEvent struct {
 	Event
-	Events []struct {
-		Type   string      `json:"type"`
-		Orders []UserOrder `json:"orders"`
-	} `json:"events"`
+	Events []UserEventType `json:"events"`
+}
+
+type UserEventType struct {
+	Type   string      `json:"type"`
+	Orders []UserOrder `json:"orders"`
 }
 
 type UserOrder struct {

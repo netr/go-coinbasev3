@@ -18,7 +18,7 @@ const (
 	ChannelTypeStatus       ChannelType = "status"
 	ChannelTypeTicker       ChannelType = "ticker"
 	ChannelTypeTickerBatch  ChannelType = "ticker_batch"
-	ChannelTypeLevel2       ChannelType = "level2"
+	ChannelTypeLevel2       ChannelType = "l2_data"
 	ChannelTypeUser         ChannelType = "user"
 	ChannelTypeMarketTrades ChannelType = "market_trades"
 )

@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/imroc/req/v3 v3.42.2
+	github.com/mitchellh/mapstructure v1.5.0
 )
 
 require (
