@@ -32,33 +32,32 @@ go get github.com/netr/go-coinbasev3
 
 The websocket client is a wrapper around the gorilla websocket with a few extra features to make it easier to use with the Coinbase Advanced Trade API.
 The socket will automatically handle reconnections in the background to ensure you can run your sockets for long periods of time without worrying about the connection dropping. This is the reason why the configuration requires the channel subscriptions prior to initializing the client. In order for the connection to reconnect properly it will need to re-subscribe to the channels that were previously subscribed to.
+
 ```go
-// create a ticker channel subscription. See: https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-channels
-ticker := coinbasev3.NewWsChannelSub(
-  []string{"ETH-USD", "BTC-USD"},
-  coinbasev3.ChannelTypeTicker,
-)
-heartbeat := coinbasev3.NewWsChannelSub(
-  []string{"ETH-USD", "ETH-EUR"},
-  coinbasev3.ChannelTypeHeartbeats,
-)
-
-// create a channel to read messages from the websocket
+// create a list of products to subscribe to 
+// follows best practices mentioned in docs: https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-best-practices)
+products := []string{"ETH-USD", "BTC-USD"}
+// use one read channel for all products
 readCh := make(chan []byte)
-
-// create a minimal websocket config
-wsConfig := coinbasev3.NewWsConfig("api_key", "secret_key", readCh, []coinbasev3.WsChannel{ticker, heartbeat})
-
-// create a websocket client with the config
-ws, err := coinbasev3.NewWsClient(wsConfig)
-if err != nil {
+for _, product := range products {
+  // create a ticker + heartbeat channel subscription. See: https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-channels
+  ticker := coinbasev3.NewWsChannelSub(coinbasev3.ChannelTypeTicker, []string{product})
+  heartbeat := coinbasev3.NewWsChannelSub(coinbasev3.ChannelTypeHeartbeats, []string{product})
+  
+  // create a minimal websocket config
+  wsConfig := coinbasev3.NewWsConfig("api_key", "secret_key", readCh, []coinbasev3.WsChannel{ticker, heartbeat})
+  
+  // create a websocket client with the config
+  ws, err := coinbasev3.NewWsClient(wsConfig)
+  if err != nil {
   panic("Failed to create Coinbase websocket client")
-}
-
-// open the websocket connection
-_, err = ws.Connect()
-if err != nil {
-    panic("Failed to connect to Coinbase websocket")
+  }
+  
+  // open the websocket connection
+  _, err = ws.Connect()
+  if err != nil {
+  panic("Failed to connect to Coinbase websocket")
+  }
 }
 
 // read messages from the websocket
