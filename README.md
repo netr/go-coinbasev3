@@ -1,5 +1,4 @@
-# Coinbase Advanced Trades API (v3)
-
+# Coinbase Advanced Trades API (v3) [![Build Status](https://github.com/netr/go-coinbasev3/workflows/Build/badge.svg?branch=v1)](https://github.com/netr/go-coinbasev3/actions?query=workflow%3ABuild) [![GoDoc](https://godoc.org/github.com/netr/go-coinbasev3?status.svg)](https://godoc.org/github.com/netr/go-coinbasev3)
 This is a Go client for the Coinbase Advanced Trades API (v3). Work in progress.
 
 ## Installation

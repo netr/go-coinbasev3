@@ -2,7 +2,6 @@ package coinbasev3
 
 import (
 	"fmt"
-	"github.com/imroc/req/v3"
 	"github.com/jarcoal/httpmock"
 	"net/http"
 	"testing"
@@ -206,25 +205,5 @@ func TestApiClient_GetProduct(t *testing.T) {
 
 	if data.BaseCurrencyId != "ETH" {
 		t.Errorf("Expected ETH, got %s", data.BaseCurrencyId)
-	}
-}
-
-type MockHttpClient struct {
-	Response *req.Response
-	Err      error
-	client   *req.Client
-}
-
-func (m *MockHttpClient) Get(url string) (*req.Response, error) {
-	return m.Response, m.Err
-}
-
-func (m *MockHttpClient) GetClient() *req.Client {
-	return nil
-}
-
-func NewMockHttpClient(resp *req.Response) HttpClient {
-	return &MockHttpClient{
-		Response: resp,
 	}
 }
