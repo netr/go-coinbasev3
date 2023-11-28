@@ -9,7 +9,6 @@ import (
 
 func TestApiClient_GetBestBidAsk(t *testing.T) {
 	api := NewApiClient("api_key", "secret_key")
-
 	productId := "BTC-USD"
 
 	httpmock.ActivateNonDefault(api.client.GetClient())

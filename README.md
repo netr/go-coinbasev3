@@ -1,5 +1,7 @@
-# Coinbase Advanced Trades API (v3) [![Build Status](https://github.com/netr/go-coinbasev3/workflows/Build/badge.svg?branch=v1)](https://github.com/netr/go-coinbasev3/actions?query=workflow%3ABuild) [![GoDoc](https://godoc.org/github.com/netr/go-coinbasev3?status.svg)](https://godoc.org/github.com/netr/go-coinbasev3)
-This is a Go client for the Coinbase Advanced Trades API (v3). Work in progress.
+# Coinbase Advanced Trades API (v3) ![Tests Status](https://github.com/netr/go-coinbasev3/actions/workflows/ci.yml/badge.svg) [![GoDoc](https://godoc.org/github.com/netr/go-coinbasev3?status.svg)](https://godoc.org/github.com/netr/go-coinbasev3)
+This is a Go client for the Coinbase Advanced Trades API (v3). Work in progress. 
+
+**Note:** The advanced trading API does not have a sandbox available at this time. All tests have been mocked to ensure the client works as expected. Once the sandbox is available for the advanced trading API the tests will be updated to use the sandbox.
 
 ## Installation
 
@@ -38,6 +40,31 @@ Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-
   - [ ] Show a Transaction
   - [ ] Send Money
   - [ ] Withdraw Funds
+
+## HTTP Client Usage
+
+```go
+// the client will automatically sign requests with the api_key and secret_key using req's OnBeforeRequest callback
+client := coinbasev3.NewApiClient("api_key", "secret_key")
+
+// product is a struct defined in the coinbasev3 package
+product, err := client.GetProduct(productId)
+if err != nil {
+    panic("Failed to get product")
+}
+```
+
+### Changing base URL
+
+The advanced trading API does not currently have a sandbox available. The sandbox is only available for the Coinbase API v2. The base URL can be changed to the sandbox URL for the Coinbase API v2 endpoints. Will need to revisit this once the sandbox is available for the advanced trading API. 
+
+```go
+client := coinbasev3.NewApiClient("api_key", "secret_key")
+client.SetBaseUrlV3("https://api-public.sandbox.pro.coinbase.com")
+client.SetBaseUrlV2("https://api-public.sandbox.coinbase.com")
+client.SetBaseExchangeUrl("https://api.exchange.coinbase.com")
+```
+
 ## Websocket
 
 The websocket client is a wrapper around the gorilla websocket with a few extra features to make it easier to use with the Coinbase Advanced Trade API.

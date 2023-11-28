@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+var (
+	ErrFailedToUnmarshal = fmt.Errorf("failed to unmarshal response")
+)
+
 type HttpClient interface {
 	Get(url string) (*req.Response, error)
 	GetClient() *req.Client
@@ -23,47 +27,83 @@ type ApiClient struct {
 	baseExchangeUrl string
 }
 
-func (c *ApiClient) GetClient() *req.Client {
-	return c.client
-}
-
-type ReqClient struct {
-	client *req.Client
-}
-
-func (c *ReqClient) GetClient() *req.Client {
-	return c.client
-}
-
-var (
-	ErrFailedToUnmarshal = fmt.Errorf("failed to unmarshal response")
-)
-
 // NewApiClient creates a new Coinbase API client. The API key and secret key are used to sign requests. The default timeout is 10 seconds. The default retry count is 3. The default retry backoff interval is 1 second to 5 seconds.
 func NewApiClient(apiKey, secretKey string, clients ...HttpClient) *ApiClient {
 	if clients != nil && len(clients) > 0 {
-		return &ApiClient{
-			apiKey:          apiKey,
-			secretKey:       secretKey,
-			client:          newClient(apiKey, secretKey),
-			httpClient:      clients[0],
-			baseUrlV3:       "https://api.coinbase.com/api/v3",
-			baseUrlV2:       "https://api.coinbase.com/api/v2",
-			baseExchangeUrl: "https://api.exchange.coinbase.com",
+		ac := &ApiClient{
+			apiKey:     apiKey,
+			secretKey:  secretKey,
+			client:     newClient(apiKey, secretKey),
+			httpClient: clients[0],
 		}
+		ac.setBaseUrls()
+		return ac
 	}
 
 	client := newClient(apiKey, secretKey)
 
-	return &ApiClient{
-		apiKey:          apiKey,
-		secretKey:       secretKey,
-		client:          client,
-		httpClient:      &ReqClient{client: client},
-		baseUrlV3:       "https://api.coinbase.com/api/v3",
-		baseUrlV2:       "https://api.coinbase.com/api/v2",
-		baseExchangeUrl: "https://api.exchange.coinbase.com",
+	ac := &ApiClient{
+		apiKey:     apiKey,
+		secretKey:  secretKey,
+		client:     client,
+		httpClient: &ReqClient{client: client},
 	}
+	ac.setBaseUrls()
+	return ac
+}
+
+func newClient(apiKey, secretKey string) *req.Client {
+	client := req.C().
+		SetTimeout(time.Second * 10).
+		SetUserAgent("GoCoinbaseV3/1.0.0")
+
+	// TODO: figure out how to do this where we can use PathParam, QueryParam, etc.
+	client.OnBeforeRequest(func(client *req.Client, req *req.Request) error {
+		// create a secret key from: `timestamp + method + requestPath + body`
+		path := ""
+		if req.RawURL != "" {
+			u, err := url.Parse(req.RawURL)
+			if err != nil {
+				return err
+			}
+			path = u.Path
+		} else {
+			return fmt.Errorf("no path found")
+		}
+
+		sig := fmt.Sprintf("%d%s%s%s", time.Now().Unix(), req.Method, path, req.Body)
+		signedSig := string(SignHmacSha256(sig, secretKey))
+
+		client.Headers.Set("CB-ACCESS-KEY", apiKey)
+		client.Headers.Set("CB-ACCESS-SIGN", signedSig)
+		client.Headers.Set("CB-ACCESS-TIMESTAMP", fmt.Sprintf("%d", time.Now().Unix()))
+		return nil
+	})
+
+	return client
+}
+
+func (c *ApiClient) get(url string, out interface{}) error {
+	resp, err := c.httpClient.Get(url)
+	if err != nil {
+		return err
+	}
+
+	if !resp.IsSuccessState() {
+		return ErrFailedToUnmarshal
+	}
+
+	err = resp.Unmarshal(&out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ApiClient) setBaseUrls() {
+	c.baseUrlV3 = "https://api.coinbase.com/api/v3"
+	c.baseUrlV2 = "https://api.coinbase.com/api/v2"
+	c.baseExchangeUrl = "https://api.exchange.coinbase.com"
 }
 
 // SetSandboxUrls sets the base URLs to the sandbox environment. Note: The sandbox for Advanced Trading is not yet available. This method will be revisited when the sandbox is available.
@@ -109,54 +149,17 @@ func (c *ApiClient) makeExchangeUrl(path string) string {
 	return fmt.Sprintf("%s/%s", c.baseExchangeUrl, path)
 }
 
-func (c *ApiClient) get(url string, out interface{}) error {
-	resp, err := c.httpClient.Get(url)
-	if err != nil {
-		return err
-	}
-
-	if !resp.IsSuccessState() {
-		return ErrFailedToUnmarshal
-	}
-
-	err = resp.Unmarshal(&out)
-	if err != nil {
-		return err
-	}
-	return nil
+// ReqClient is a wrapper around the req.Client to satisfy the HttpClient interface.
+type ReqClient struct {
+	client *req.Client
 }
 
-func newClient(apiKey, secretKey string) *req.Client {
-	client := req.C().
-		SetTimeout(time.Second * 10).
-		SetUserAgent("GoCoinbaseV3/1.0.0")
-
-	// TODO: figure out how to do this where we can use PathParam, QueryParam, etc.
-	client.OnBeforeRequest(func(client *req.Client, req *req.Request) error {
-		// create a secret key from: `timestamp + method + requestPath + body`
-		path := ""
-		if req.RawURL != "" {
-			u, err := url.Parse(req.RawURL)
-			if err != nil {
-				return err
-			}
-			path = u.Path
-		} else {
-			return fmt.Errorf("no path found")
-		}
-
-		sig := fmt.Sprintf("%d%s%s%s", time.Now().Unix(), req.Method, path, req.Body)
-		signedSig := string(SignHmacSha256(sig, secretKey))
-
-		client.Headers.Set("CB-ACCESS-KEY", apiKey)
-		client.Headers.Set("CB-ACCESS-SIGN", signedSig)
-		client.Headers.Set("CB-ACCESS-TIMESTAMP", fmt.Sprintf("%d", time.Now().Unix()))
-		return nil
-	})
-
-	return client
+// GetClient returns the underlying req.Client.
+func (c *ReqClient) GetClient() *req.Client {
+	return c.client
 }
 
+// Get makes a GET request to the given URL.
 func (c *ReqClient) Get(url string) (*req.Response, error) {
 	resp, err := c.client.R().Get(url)
 	if err != nil {

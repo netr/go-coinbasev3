@@ -1,6 +1,8 @@
 package coinbasev3
 
-import "github.com/imroc/req/v3"
+import (
+	"github.com/imroc/req/v3"
+)
 
 type MockHttpClient struct {
 	Response *req.Response
@@ -19,5 +21,6 @@ func (m *MockHttpClient) GetClient() *req.Client {
 func NewMockHttpClient(resp *req.Response) HttpClient {
 	return &MockHttpClient{
 		Response: resp,
+		client:   nil,
 	}
 }
