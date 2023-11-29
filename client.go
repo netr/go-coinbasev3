@@ -1,6 +1,8 @@
 package coinbasev3
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/imroc/req/v3"
 	"net/url"
@@ -84,38 +86,39 @@ func newClient(apiKey, secretKey string) *req.Client {
 	return client
 }
 
-func (c *ApiClient) get(url string, out interface{}) error {
+func (c *ApiClient) get(url string, out interface{}) ([]byte, error) {
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
-		return err
+		return resp.Bytes(), err
 	}
 
 	if !resp.IsSuccessState() {
-		return ErrFailedToUnmarshal
+		return resp.Bytes(), ErrFailedToUnmarshal
 	}
 
 	err = resp.Unmarshal(&out)
 	if err != nil {
-		return err
+		return resp.Bytes(), err
 	}
-	return nil
+
+	return resp.Bytes(), nil
 }
 
-func (c *ApiClient) post(url string, data []byte, out interface{}) error {
+func (c *ApiClient) post(url string, data []byte, out interface{}) ([]byte, error) {
 	resp, err := c.httpClient.Post(url, data)
 	if err != nil {
-		return err
+		return resp.Bytes(), err
 	}
 
 	if !resp.IsSuccessState() {
-		return ErrFailedToUnmarshal
+		return resp.Bytes(), ErrFailedToUnmarshal
 	}
 
 	err = resp.Unmarshal(&out)
 	if err != nil {
-		return err
+		return resp.Bytes(), err
 	}
-	return nil
+	return resp.Bytes(), nil
 }
 
 func (c *ApiClient) setBaseUrls() {
@@ -195,4 +198,47 @@ func (c *ReqClient) Post(url string, data []byte) (*req.Response, error) {
 	}
 
 	return resp, nil
+}
+
+type ErrorResponse struct {
+	Error        string       `json:"error"`
+	Code         string       `json:"code"`
+	Message      string       `json:"message"`
+	ErrorDetails string       `json:"error_details"`
+	Details      ErrorDetails `json:"details"`
+}
+
+func newErrorResponse(res []byte) ErrorResponse {
+	var errRes ErrorResponse
+	err := json.Unmarshal(res, &errRes)
+	if err != nil {
+		return ErrorResponse{
+			Error:   err.Error(),
+			Code:    "unknown",
+			Message: err.Error(),
+		}
+	}
+	return errRes
+}
+
+type ErrorDetail struct {
+	TypeUrl string `json:"type_url"`
+	Value   string `json:"value"`
+}
+
+type ErrorDetails []ErrorDetail
+
+// UnmarshalJSON implements the json.Unmarshaler interface. Required because Coinbase returns an array of error details or a single error detail object.
+func (ed *ErrorDetails) UnmarshalJSON(data []byte) error {
+	var details []ErrorDetail
+	if err := json.Unmarshal(data, &details); err == nil {
+		*ed = details
+		return nil
+	}
+	var detail ErrorDetail
+	if err := json.Unmarshal(data, &detail); err == nil {
+		*ed = ErrorDetails{detail}
+		return nil
+	}
+	return errors.New("error details should be an array or a single object")
 }

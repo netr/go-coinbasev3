@@ -216,8 +216,8 @@ func (c *ApiClient) GetProductBook(productId string, limit int32) (ProductBookDa
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/product_book?product_id=%s&limit=%d", productId, limit))
 
 	var data ProductBookData
-	if c.get(u, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.get(u, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }
@@ -249,8 +249,8 @@ func (c *ApiClient) GetBestBidAsk(productIds []string) (BestBidAskData, error) {
 
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/best_bid_ask?%s", query))
 	var data BestBidAskData
-	if c.get(u, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.get(u, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }

@@ -82,8 +82,8 @@ func (q ListFillsQuery) BuildQueryString() string {
 func (c *ApiClient) GetListFills(q ListFillsQuery) (ListFillsData, error) {
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/fills%s", q.BuildQueryString()))
 	var data ListFillsData
-	if c.get(u, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.get(u, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }
@@ -210,8 +210,8 @@ func (c *ApiClient) GetListOrders(q ListOrdersQuery) (ListOrdersData, error) {
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/batch%s", q.BuildQueryString()))
 
 	var data ListOrdersData
-	if c.get(u, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.get(u, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }
@@ -332,8 +332,8 @@ func (c *ApiClient) GetOrder(orderId string) (Order, error) {
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/%s", orderId))
 
 	var data GetOrderData
-	if c.get(u, &data) != nil {
-		return data.Order, ErrFailedToUnmarshal
+	if res, err := c.get(u, &data); err != nil {
+		return data.Order, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data.Order, nil
 }
@@ -367,8 +367,8 @@ func (c *ApiClient) CreateOrder(req CreateOrderRequest) (CreateOrderData, error)
 		return data, err
 	}
 
-	if c.post(u, body, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.post(u, body, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }
@@ -412,8 +412,8 @@ func (c *ApiClient) CancelOrders(orderIds []string) (CancelOrdersData, error) {
 		return data, err
 	}
 
-	if c.post(u, body, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.post(u, body, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }
@@ -474,8 +474,8 @@ func (c *ApiClient) EditOrder(req EditOrderRequest) (EditOrderData, error) {
 		return data, err
 	}
 
-	if c.post(u, body, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.post(u, body, &data); err != nil {
+		return data, fmt.Errorf("%v", newErrorResponse(res))
 	}
 	return data, nil
 }
@@ -501,8 +501,8 @@ func (c *ApiClient) EditOrderPreview(req EditOrderRequest) (EditOrderPreviewData
 		return data, err
 	}
 
-	if c.post(u, body, &data) != nil {
-		return data, ErrFailedToUnmarshal
+	if res, err := c.post(u, body, &data); err != nil {
+		return data, fmt.Errorf("%s", newErrorResponse(res))
 	}
 	return data, nil
 }
