@@ -449,3 +449,72 @@ func (o *CancelOrderResults) UnmarshalJSON(data []byte) error {
 	// If both attempts fail, return an error
 	return errors.New("orders should be an array or a single object")
 }
+
+type EditOrderRequest struct {
+	// OrderId ID of order to edit.
+	OrderId string `json:"order_id"`
+	// Price New price of order. Required if order type is limit or stop-limit.
+	Price string `json:"price"`
+	// Size New size of order. Required if order type is limit or stop-limit.
+	Size string `json:"size"`
+}
+
+func (req EditOrderRequest) ToJson() ([]byte, error) {
+	return json.Marshal(req)
+}
+
+// EditOrder edit an order with a specified new size, or new price. Only limit order types, with time in force type of good-till-cancelled can be edited.
+func (c *ApiClient) EditOrder(req EditOrderRequest) (EditOrderData, error) {
+	var data EditOrderData
+
+	u := c.makeV3Url("/brokerage/orders/edit")
+
+	body, err := req.ToJson()
+	if err != nil {
+		return data, err
+	}
+
+	if c.post(u, body, &data) != nil {
+		return data, ErrFailedToUnmarshal
+	}
+	return data, nil
+}
+
+type EditOrderData struct {
+	Success bool            `json:"success"`
+	Errors  EditOrderErrors `json:"errors"`
+}
+
+type EditOrderErrors struct {
+	EditFailureReason    string `json:"edit_failure_reason"`
+	PreviewFailureReason string `json:"preview_failure_reason"`
+}
+
+// EditOrderPreview edit an order with a specified new size, or new price. Only limit order types, with time in force type of good-till-cancelled can be edited.
+func (c *ApiClient) EditOrderPreview(req EditOrderRequest) (EditOrderPreviewData, error) {
+	var data EditOrderPreviewData
+
+	u := c.makeV3Url("/brokerage/orders/edit_preview")
+
+	body, err := req.ToJson()
+	if err != nil {
+		return data, err
+	}
+
+	if c.post(u, body, &data) != nil {
+		return data, ErrFailedToUnmarshal
+	}
+	return data, nil
+}
+
+type EditOrderPreviewData struct {
+	Errors             EditOrderErrors `json:"errors"`
+	Slippage           string          `json:"slippage"`
+	OrderTotal         string          `json:"order_total"`
+	CommissionTotal    string          `json:"commission_total"`
+	QuoteSize          string          `json:"quote_size"`
+	BaseSize           string          `json:"base_size"`
+	BestBid            string          `json:"best_bid"`
+	BestAsk            string          `json:"best_ask"`
+	AverageFilledPrice string          `json:"average_filled_price"`
+}

@@ -266,3 +266,53 @@ func TestApiClient_CancelOrders_Array(t *testing.T) {
 		t.Fatalf("Expected Success to be true, got %t", data.Results[0].Success)
 	}
 }
+
+func TestApiClient_EditOrder(t *testing.T) {
+	api := NewApiClient("api_key", "secret_key")
+
+	httpmock.ActivateNonDefault(api.client.GetClient())
+	httpmock.RegisterResponder("POST", "https://api.coinbase.com/api/v3/brokerage/orders/edit", func(request *http.Request) (*http.Response, error) {
+		respBody := `{"success":true,"errors":{"edit_failure_reason":"UNKNOWN_EDIT_ORDER_FAILURE_REASON","preview_failure_reason":"UNKNOWN_PREVIEW_FAILURE_REASON"}}`
+		resp := httpmock.NewStringResponse(http.StatusOK, respBody)
+		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
+		return resp, nil
+	})
+
+	data, err := api.EditOrder(EditOrderRequest{
+		OrderId: "11111-00000-000000",
+		Price:   "10000.00",
+		Size:    "0.001",
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	if data.Success != true {
+		t.Fatalf("Expected Success to be true, got %t", data.Success)
+	}
+}
+
+func TestApiClient_EditOrderPreview(t *testing.T) {
+	api := NewApiClient("api_key", "secret_key")
+
+	httpmock.ActivateNonDefault(api.client.GetClient())
+	httpmock.RegisterResponder("POST", "https://api.coinbase.com/api/v3/brokerage/orders/edit_preview", func(request *http.Request) (*http.Response, error) {
+		respBody := `{"errors":{"edit_failure_reason":"UNKNOWN_EDIT_ORDER_FAILURE_REASON","preview_failure_reason":"UNKNOWN_PREVIEW_FAILURE_REASON"},"slippage":"string","order_total":"string","commission_total":"string","quote_size":"string","base_size":"string","best_bid":"string","best_ask":"string","average_filled_price":"string"}`
+		resp := httpmock.NewStringResponse(http.StatusOK, respBody)
+		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
+		return resp, nil
+	})
+
+	data, err := api.EditOrderPreview(EditOrderRequest{
+		OrderId: "11111-00000-000000",
+		Price:   "10000.00",
+		Size:    "0.001",
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	if data.Slippage != "string" {
+		t.Fatalf("Expected Slippage to be string, got %s", data.Slippage)
+	}
+}

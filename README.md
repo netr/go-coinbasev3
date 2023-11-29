@@ -13,13 +13,13 @@ go get github.com/netr/go-coinbasev3
 Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-pro-mapping)
 - [X] Websocket Feed [Advanced Trade WebSocket Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/ws-overview)
 - [X] Public API (No authentication needed)
-- [ ] Advanced Trade API (V3) [Advanced Trade REST API Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-overview)
+- [X] Advanced Trade API (V3) [Advanced Trade REST API Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-overview)
     - [x] List Accounts
     - [x] Get Account
     - [X] Create Order
     - [X] Cancel Orders
-    - [ ] Edit Order
-    - [ ] Edit Order Preview
+    - [X] Edit Order
+    - [X] Edit Order Preview
     - [X] List Orders
     - [X] List Fills
     - [X] Get Order
