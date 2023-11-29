@@ -18,7 +18,7 @@ func TestApiClient_GetListFills_Empty(t *testing.T) {
 		return resp, nil
 	})
 
-	data, err := api.GetListFills(ListFillsRequest{})
+	data, err := api.GetListFills(ListFillsQuery{})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -31,7 +31,7 @@ func TestApiClient_GetListFills_Empty(t *testing.T) {
 func TestApiClient_GetListFills_WithFillData_Single(t *testing.T) {
 	api := NewApiClient("api_key", "secret_key")
 
-	req := ListFillsRequest{
+	query := ListFillsQuery{
 		OrderId:                "0000-000000-000000",
 		ProductId:              "4444-44444-444444",
 		StartSequenceTimestamp: "2021-05-31T09:59:59Z",
@@ -42,12 +42,12 @@ func TestApiClient_GetListFills_WithFillData_Single(t *testing.T) {
 
 	u := fmt.Sprintf(
 		"https://api.coinbase.com/api/v3/brokerage/orders/historical/fills?order_id=%s&product_id=%s&start_sequence_timestamp=%s&end_sequence_timestamp=%s&limit=%d&cursor=%s",
-		req.OrderId,
-		req.ProductId,
-		req.StartSequenceTimestamp,
-		req.EndSequenceTimestamp,
-		req.Limit,
-		req.Cursor,
+		query.OrderId,
+		query.ProductId,
+		query.StartSequenceTimestamp,
+		query.EndSequenceTimestamp,
+		query.Limit,
+		query.Cursor,
 	)
 
 	httpmock.ActivateNonDefault(api.client.GetClient())
@@ -58,7 +58,7 @@ func TestApiClient_GetListFills_WithFillData_Single(t *testing.T) {
 		return resp, nil
 	})
 
-	data, err := api.GetListFills(req)
+	data, err := api.GetListFills(query)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -75,7 +75,7 @@ func TestApiClient_GetListFills_WithFillData_Single(t *testing.T) {
 func TestApiClient_GetListFills_WithFillData_Array(t *testing.T) {
 	api := NewApiClient("api_key", "secret_key")
 
-	req := ListFillsRequest{
+	query := ListFillsQuery{
 		OrderId:                "0000-000000-000000",
 		ProductId:              "4444-44444-444444",
 		StartSequenceTimestamp: "2021-05-31T09:59:59Z",
@@ -86,12 +86,12 @@ func TestApiClient_GetListFills_WithFillData_Array(t *testing.T) {
 
 	u := fmt.Sprintf(
 		"https://api.coinbase.com/api/v3/brokerage/orders/historical/fills?order_id=%s&product_id=%s&start_sequence_timestamp=%s&end_sequence_timestamp=%s&limit=%d&cursor=%s",
-		req.OrderId,
-		req.ProductId,
-		req.StartSequenceTimestamp,
-		req.EndSequenceTimestamp,
-		req.Limit,
-		req.Cursor,
+		query.OrderId,
+		query.ProductId,
+		query.StartSequenceTimestamp,
+		query.EndSequenceTimestamp,
+		query.Limit,
+		query.Cursor,
 	)
 
 	httpmock.ActivateNonDefault(api.client.GetClient())
@@ -102,7 +102,7 @@ func TestApiClient_GetListFills_WithFillData_Array(t *testing.T) {
 		return resp, nil
 	})
 
-	data, err := api.GetListFills(req)
+	data, err := api.GetListFills(query)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -127,7 +127,7 @@ func TestApiClient_GetListOrders_Empty(t *testing.T) {
 		return resp, nil
 	})
 
-	data, err := api.GetListOrders(ListOrdersRequest{})
+	data, err := api.GetListOrders(ListOrdersQuery{})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -148,7 +148,7 @@ func TestApiClient_GetListOrders_WithOrderDataArray(t *testing.T) {
 		return resp, nil
 	})
 
-	data, err := api.GetListOrders(ListOrdersRequest{})
+	data, err := api.GetListOrders(ListOrdersQuery{})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -169,7 +169,7 @@ func TestApiClient_GetListOrders_WithOrderData_Single(t *testing.T) {
 		return resp, nil
 	})
 
-	data, err := api.GetListOrders(ListOrdersRequest{})
+	data, err := api.GetListOrders(ListOrdersQuery{})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}

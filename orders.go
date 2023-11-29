@@ -33,8 +33,8 @@ const (
 	OrderPlacementSourceRetailSimple   OrderPlacementSource = "RETAIL_SIMPLE"
 )
 
-// ListFillsRequest represents the request parameters for the GetListFills function.
-type ListFillsRequest struct {
+// ListFillsQuery represents the request parameters for the GetListFills function.
+type ListFillsQuery struct {
 	// OrderId string ID of order
 	OrderId string `json:"order_id"`
 	// ProductId string The ID of the product this order was created for.
@@ -50,25 +50,25 @@ type ListFillsRequest struct {
 }
 
 // BuildQueryString creates a query string from the request parameters. If no parameters are set, an empty string is returned.
-func (req ListFillsRequest) BuildQueryString() string {
+func (q ListFillsQuery) BuildQueryString() string {
 	sb := strings.Builder{}
-	if req.OrderId != "" {
-		sb.WriteString(fmt.Sprintf("&order_id=%s", req.OrderId))
+	if q.OrderId != "" {
+		sb.WriteString(fmt.Sprintf("&order_id=%s", q.OrderId))
 	}
-	if req.ProductId != "" {
-		sb.WriteString(fmt.Sprintf("&product_id=%s", req.ProductId))
+	if q.ProductId != "" {
+		sb.WriteString(fmt.Sprintf("&product_id=%s", q.ProductId))
 	}
-	if req.StartSequenceTimestamp != "" {
-		sb.WriteString(fmt.Sprintf("&start_sequence_timestamp=%s", req.StartSequenceTimestamp))
+	if q.StartSequenceTimestamp != "" {
+		sb.WriteString(fmt.Sprintf("&start_sequence_timestamp=%s", q.StartSequenceTimestamp))
 	}
-	if req.EndSequenceTimestamp != "" {
-		sb.WriteString(fmt.Sprintf("&end_sequence_timestamp=%s", req.EndSequenceTimestamp))
+	if q.EndSequenceTimestamp != "" {
+		sb.WriteString(fmt.Sprintf("&end_sequence_timestamp=%s", q.EndSequenceTimestamp))
 	}
-	if req.Limit > 0 {
-		sb.WriteString(fmt.Sprintf("&limit=%d", req.Limit))
+	if q.Limit > 0 {
+		sb.WriteString(fmt.Sprintf("&limit=%d", q.Limit))
 	}
-	if req.Cursor != "" {
-		sb.WriteString(fmt.Sprintf("&cursor=%s", req.Cursor))
+	if q.Cursor != "" {
+		sb.WriteString(fmt.Sprintf("&cursor=%s", q.Cursor))
 	}
 
 	// Better way to do this?
@@ -79,8 +79,8 @@ func (req ListFillsRequest) BuildQueryString() string {
 }
 
 // GetListFills get a list of fills filtered by optional query parameters (product_id, order_id, etc).
-func (c *ApiClient) GetListFills(req ListFillsRequest) (ListFillsData, error) {
-	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/fills%s", req.BuildQueryString()))
+func (c *ApiClient) GetListFills(q ListFillsQuery) (ListFillsData, error) {
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/fills%s", q.BuildQueryString()))
 	var data ListFillsData
 	if c.get(u, &data) != nil {
 		return data, ErrFailedToUnmarshal
@@ -132,8 +132,8 @@ type Fill struct {
 	Side               string    `json:"side"`
 }
 
-// ListOrdersRequest represents the request parameters for the GetListOrders function.
-type ListOrdersRequest struct {
+// ListOrdersQuery represents the request parameters for the GetListOrders function.
+type ListOrdersQuery struct {
 	// ProductId Optional string of the product ID. Defaults to null, or fetch for all products.
 	ProductId string `json:"product_id,omitempty"`
 	// OrderStatus A list of order statuses.
@@ -159,43 +159,43 @@ type ListOrdersRequest struct {
 }
 
 // BuildQueryString creates a query string from the request parameters. If no parameters are set, an empty string is returned.
-func (req *ListOrdersRequest) BuildQueryString() string {
+func (q *ListOrdersQuery) BuildQueryString() string {
 	var sb strings.Builder
 
-	if req.ProductId != "" {
-		sb.WriteString(fmt.Sprintf("&product_id=%s", req.ProductId))
+	if q.ProductId != "" {
+		sb.WriteString(fmt.Sprintf("&product_id=%s", q.ProductId))
 	}
-	if len(req.OrderStatus) > 0 {
-		for _, status := range req.OrderStatus {
+	if len(q.OrderStatus) > 0 {
+		for _, status := range q.OrderStatus {
 			sb.WriteString(fmt.Sprintf("&order_status=%s", status))
 		}
 	}
-	if req.Limit != 0 {
-		sb.WriteString(fmt.Sprintf("&limit=%d", req.Limit))
+	if q.Limit != 0 {
+		sb.WriteString(fmt.Sprintf("&limit=%d", q.Limit))
 	}
-	if req.StartDate != "" {
-		sb.WriteString(fmt.Sprintf("&start_date=%s", req.StartDate))
+	if q.StartDate != "" {
+		sb.WriteString(fmt.Sprintf("&start_date=%s", q.StartDate))
 	}
-	if req.EndDate != "" {
-		sb.WriteString(fmt.Sprintf("&end_date=%s", req.EndDate))
+	if q.EndDate != "" {
+		sb.WriteString(fmt.Sprintf("&end_date=%s", q.EndDate))
 	}
-	if req.OrderType != "" {
-		sb.WriteString(fmt.Sprintf("&order_type=%s", req.OrderType))
+	if q.OrderType != "" {
+		sb.WriteString(fmt.Sprintf("&order_type=%s", q.OrderType))
 	}
-	if req.OrderSide != "" {
-		sb.WriteString(fmt.Sprintf("&order_side=%s", req.OrderSide))
+	if q.OrderSide != "" {
+		sb.WriteString(fmt.Sprintf("&order_side=%s", q.OrderSide))
 	}
-	if req.Cursor != "" {
-		sb.WriteString(fmt.Sprintf("&cursor=%s", req.Cursor))
+	if q.Cursor != "" {
+		sb.WriteString(fmt.Sprintf("&cursor=%s", q.Cursor))
 	}
-	if req.ProductType != "" {
-		sb.WriteString(fmt.Sprintf("&product_type=%s", req.ProductType))
+	if q.ProductType != "" {
+		sb.WriteString(fmt.Sprintf("&product_type=%s", q.ProductType))
 	}
-	if req.OrderPlacementSource != "" {
-		sb.WriteString(fmt.Sprintf("&order_placement_source=%s", req.OrderPlacementSource))
+	if q.OrderPlacementSource != "" {
+		sb.WriteString(fmt.Sprintf("&order_placement_source=%s", q.OrderPlacementSource))
 	}
-	if req.ContractExpiryType != "" {
-		sb.WriteString(fmt.Sprintf("&contract_expiry_type=%s", req.ContractExpiryType))
+	if q.ContractExpiryType != "" {
+		sb.WriteString(fmt.Sprintf("&contract_expiry_type=%s", q.ContractExpiryType))
 	}
 
 	// Remove the first '&' for a clean query string
@@ -206,8 +206,8 @@ func (req *ListOrdersRequest) BuildQueryString() string {
 }
 
 // GetListOrders get a list of orders filtered by optional query parameters (product_id, order_status, etc). Note: You cannot pair open orders with other order types. Example: order_status=OPEN,CANCELLED will return an error.
-func (c *ApiClient) GetListOrders(req ListOrdersRequest) (ListOrdersData, error) {
-	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/batch%s", req.BuildQueryString()))
+func (c *ApiClient) GetListOrders(q ListOrdersQuery) (ListOrdersData, error) {
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/batch%s", q.BuildQueryString()))
 
 	var data ListOrdersData
 	if c.get(u, &data) != nil {
