@@ -83,7 +83,7 @@ func (c *ApiClient) GetListFills(q ListFillsQuery) (ListFillsData, error) {
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/fills%s", q.BuildQueryString()))
 	var data ListFillsData
 	if res, err := c.get(u, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
@@ -211,7 +211,7 @@ func (c *ApiClient) GetListOrders(q ListOrdersQuery) (ListOrdersData, error) {
 
 	var data ListOrdersData
 	if res, err := c.get(u, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
@@ -333,7 +333,7 @@ func (c *ApiClient) GetOrder(orderId string) (Order, error) {
 
 	var data GetOrderData
 	if res, err := c.get(u, &data); err != nil {
-		return data.Order, fmt.Errorf("%s", newErrorResponse(res))
+		return data.Order, newResponseError(res)
 	}
 	return data.Order, nil
 }
@@ -368,7 +368,7 @@ func (c *ApiClient) CreateOrder(req CreateOrderRequest) (CreateOrderData, error)
 	}
 
 	if res, err := c.post(u, body, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
@@ -413,7 +413,7 @@ func (c *ApiClient) CancelOrders(orderIds []string) (CancelOrdersData, error) {
 	}
 
 	if res, err := c.post(u, body, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
@@ -475,7 +475,7 @@ func (c *ApiClient) EditOrder(req EditOrderRequest) (EditOrderData, error) {
 	}
 
 	if res, err := c.post(u, body, &data); err != nil {
-		return data, fmt.Errorf("%v", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
@@ -502,7 +502,7 @@ func (c *ApiClient) EditOrderPreview(req EditOrderRequest) (EditOrderPreviewData
 	}
 
 	if res, err := c.post(u, body, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }

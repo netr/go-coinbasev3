@@ -59,7 +59,7 @@ func (c *ApiClient) GetTransactionSummary(req TransactionSummaryRequest) (Transa
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/transaction_summary%s", query))
 	var data TransactionSummaryData
 	if res, err := c.get(u, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }

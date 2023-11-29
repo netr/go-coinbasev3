@@ -200,7 +200,26 @@ func (c *ReqClient) Post(url string, data []byte) (*req.Response, error) {
 	return resp, nil
 }
 
-type ErrorResponse struct {
+type ResponseError struct {
+	Message       string        `json:"message"`
+	CoinbaseError CoinbaseError `json:"coinbase_error"`
+}
+
+// Implement the Error() method for MyCustomError.
+// This method makes MyCustomError satisfy the error interface.
+func (e ResponseError) Error() string {
+	return e.Message
+}
+
+func newResponseError(res []byte) error {
+	resErr := newCoinbaseError(res)
+	return ResponseError{
+		Message:       resErr.Message,
+		CoinbaseError: resErr.CoinbaseError,
+	}
+}
+
+type CoinbaseError struct {
 	Error        string       `json:"error"`
 	Code         string       `json:"code"`
 	Message      string       `json:"message"`
@@ -208,17 +227,19 @@ type ErrorResponse struct {
 	Details      ErrorDetails `json:"details"`
 }
 
-func newErrorResponse(res []byte) ErrorResponse {
-	var errRes ErrorResponse
+func newCoinbaseError(res []byte) ResponseError {
+	var errRes CoinbaseError
 	err := json.Unmarshal(res, &errRes)
 	if err != nil {
-		return ErrorResponse{
-			Error:   err.Error(),
-			Code:    "unknown",
-			Message: err.Error(),
+		return ResponseError{
+			Message:       err.Error(),
+			CoinbaseError: errRes,
 		}
 	}
-	return errRes
+	return ResponseError{
+		Message:       errRes.Message,
+		CoinbaseError: errRes,
+	}
 }
 
 type ErrorDetail struct {

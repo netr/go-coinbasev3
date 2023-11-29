@@ -56,6 +56,30 @@ if err != nil {
 }
 ```
 
+### Error Handling
+
+The client will return an error if the response status code is not 200, the retries run out of attempts, or the []byte response can't properly marshal the result into json.
+
+There is an error wrapper `coinbasev3.ResponseError` that will contain the error message and a marshaled coinbase error struct.
+
+For most cases, the normal error message should contain enough information to determine what went wrong. However, if you need to access the coinbase error struct you can use the `errors.As` function to check if the error is a `coinbasev3.ResponseError` and then access the `CoinbaseError` field.
+
+```go
+res, err := client.EditOrder(coinbasev3.EditOrderRequest{
+    OrderId: "d0c5340b-6d6c-49d9-b567-48c4bfca13d2",
+    Size:    "1.00",
+    Price:   "0.01",	
+})
+if err != nil {
+    var myErr coinbasev3.ResponseError
+    if errors.As(err, &myErr) {
+        panic(err.(coinbasev3.ResponseError).CoinbaseError)
+    } else {
+        panic("Failed to edit order")
+    }
+}
+```
+
 ### Changing base URL
 
 The advanced trading API does not currently have a sandbox available. The sandbox is only available for the Coinbase API v2. The base URL can be changed to the sandbox URL for the Coinbase API v2 endpoints. Will need to revisit this once the sandbox is available for the advanced trading API. 

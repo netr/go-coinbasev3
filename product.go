@@ -217,7 +217,7 @@ func (c *ApiClient) GetProductBook(productId string, limit int32) (ProductBookDa
 
 	var data ProductBookData
 	if res, err := c.get(u, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
@@ -250,7 +250,7 @@ func (c *ApiClient) GetBestBidAsk(productIds []string) (BestBidAskData, error) {
 	u := c.makeV3Url(fmt.Sprintf("/brokerage/best_bid_ask?%s", query))
 	var data BestBidAskData
 	if res, err := c.get(u, &data); err != nil {
-		return data, fmt.Errorf("%s", newErrorResponse(res))
+		return data, newResponseError(res)
 	}
 	return data, nil
 }
