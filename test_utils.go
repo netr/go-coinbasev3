@@ -14,6 +14,10 @@ func (m *MockHttpClient) Get(url string) (*req.Response, error) {
 	return m.Response, m.Err
 }
 
+func (m *MockHttpClient) Post(url string, data []byte) (*req.Response, error) {
+	return m.Response, m.Err
+}
+
 func (m *MockHttpClient) GetClient() *req.Client {
 	return nil
 }

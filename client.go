@@ -14,6 +14,7 @@ var (
 
 type HttpClient interface {
 	Get(url string) (*req.Response, error)
+	Post(url string, data []byte) (*req.Response, error)
 	GetClient() *req.Client
 }
 
@@ -100,6 +101,23 @@ func (c *ApiClient) get(url string, out interface{}) error {
 	return nil
 }
 
+func (c *ApiClient) post(url string, data []byte, out interface{}) error {
+	resp, err := c.httpClient.Post(url, data)
+	if err != nil {
+		return err
+	}
+
+	if !resp.IsSuccessState() {
+		return ErrFailedToUnmarshal
+	}
+
+	err = resp.Unmarshal(&out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *ApiClient) setBaseUrls() {
 	c.baseUrlV3 = "https://api.coinbase.com/api/v3"
 	c.baseUrlV2 = "https://api.coinbase.com/api/v2"
@@ -162,6 +180,16 @@ func (c *ReqClient) GetClient() *req.Client {
 // Get makes a GET request to the given URL.
 func (c *ReqClient) Get(url string) (*req.Response, error) {
 	resp, err := c.client.R().Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// Post makes a POST request to the given URL.
+func (c *ReqClient) Post(url string, data []byte) (*req.Response, error) {
+	resp, err := c.client.R().SetBody(data).Post(url)
 	if err != nil {
 		return nil, err
 	}

@@ -199,3 +199,70 @@ func TestApiClient_GetOrder(t *testing.T) {
 		t.Fatalf("Expected OrderId to be 0000-000000-000000, got %s", data.OrderId)
 	}
 }
+
+func TestApiClient_CreateOrder(t *testing.T) {
+	api := NewApiClient("api_key", "secret_key")
+
+	httpmock.ActivateNonDefault(api.client.GetClient())
+	httpmock.RegisterResponder("POST", "https://api.coinbase.com/api/v3/brokerage/orders", func(request *http.Request) (*http.Response, error) {
+		respBody := `{"success":true,"failure_reason":"string","order_id":"string","success_response":{"order_id":"11111-00000-000000","product_id":"BTC-USD","side":"UNKNOWN_ORDER_SIDE","client_order_id":"0000-00000-000000"},"error_response":null,"order_configuration":{"market_market_ioc":{"quote_size":"10.00","base_size":"0.001"},"limit_limit_gtc":{"base_size":"0.001","limit_price":"10000.00","post_only":false},"limit_limit_gtd":{"base_size":"0.001","limit_price":"10000.00","end_time":"2021-05-31T09:59:59Z","post_only":false},"stop_limit_stop_limit_gtc":{"base_size":"0.001","limit_price":"10000.00","stop_price":"20000.00","stop_direction":"UNKNOWN_STOP_DIRECTION"},"stop_limit_stop_limit_gtd":{"base_size":0.001,"limit_price":"10000.00","stop_price":"20000.00","end_time":"2021-05-31T09:59:59Z","stop_direction":"UNKNOWN_STOP_DIRECTION"}}}`
+		resp := httpmock.NewStringResponse(http.StatusOK, respBody)
+		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
+		return resp, nil
+	})
+
+	data, err := api.CreateOrder(CreateOrderRequest{
+		ClientOrderID: "0000-00000-000000",
+		ProductID:     "BTC-USD",
+		Side:          OrderSideBuy,
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	if data.SuccessResponse.OrderId != "11111-00000-000000" {
+		t.Fatalf("Expected OrderId to be 11111-00000-000000, got %s", data.SuccessResponse.OrderId)
+	}
+}
+
+func TestApiClient_CancelOrders_Single(t *testing.T) {
+	api := NewApiClient("api_key", "secret_key")
+
+	httpmock.ActivateNonDefault(api.client.GetClient())
+	httpmock.RegisterResponder("POST", "https://api.coinbase.com/api/v3/brokerage/orders/batch_cancel", func(request *http.Request) (*http.Response, error) {
+		respBody := `{"results":{"success":true,"failure_reason":"UNKNOWN_CANCEL_FAILURE_REASON","order_id":"0000-00000"}}`
+		resp := httpmock.NewStringResponse(http.StatusOK, respBody)
+		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
+		return resp, nil
+	})
+
+	data, err := api.CancelOrders([]string{"11111-00000-000000"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	if data.Results[0].Success != true {
+		t.Fatalf("Expected Success to be true, got %t", data.Results[0].Success)
+	}
+}
+
+func TestApiClient_CancelOrders_Array(t *testing.T) {
+	api := NewApiClient("api_key", "secret_key")
+
+	httpmock.ActivateNonDefault(api.client.GetClient())
+	httpmock.RegisterResponder("POST", "https://api.coinbase.com/api/v3/brokerage/orders/batch_cancel", func(request *http.Request) (*http.Response, error) {
+		respBody := `{"results":[{"success":true,"failure_reason":"UNKNOWN_CANCEL_FAILURE_REASON","order_id":"0000-00000"}]}`
+		resp := httpmock.NewStringResponse(http.StatusOK, respBody)
+		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
+		return resp, nil
+	})
+
+	data, err := api.CancelOrders([]string{"11111-00000-000000"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	if data.Results[0].Success != true {
+		t.Fatalf("Expected Success to be true, got %t", data.Results[0].Success)
+	}
+}

@@ -16,8 +16,10 @@ Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-
 - [ ] Advanced Trade API (V3) [Advanced Trade REST API Docs](https://docs.cloud.coinbase.com/advanced-trade-api/docs/rest-api-overview)
     - [x] List Accounts
     - [x] Get Account
-    - [ ] Create Order
-    - [ ] Cancel Orders
+    - [X] Create Order
+    - [X] Cancel Orders
+    - [ ] Edit Order
+    - [ ] Edit Order Preview
     - [X] List Orders
     - [X] List Fills
     - [X] Get Order

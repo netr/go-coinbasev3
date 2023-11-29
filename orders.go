@@ -225,7 +225,7 @@ type ListOrdersData struct {
 
 type Orders []Order
 
-// UnmarshalJSON implements the json.Unmarshaler interface. Required because Coinbase returns an array of fills or a single fill object.
+// UnmarshalJSON implements the json.Unmarshaler interface. Required because Coinbase returns an array of orders or a single order object.
 func (o *Orders) UnmarshalJSON(data []byte) error {
 	// First, try unmarshaling into a slice
 	var ordersSlice []Order
@@ -340,4 +340,112 @@ func (c *ApiClient) GetOrder(orderId string) (Order, error) {
 
 type GetOrderData struct {
 	Order Order `json:"order"`
+}
+
+type CreateOrderRequest struct {
+	// ClientOrderId string Client set unique uuid for this order
+	ClientOrderID string `json:"client_order_id"`
+	// ProductId string The product this order was created for e.g. 'BTC-USD'
+	ProductID string `json:"product_id"`
+	// OrderType string Possible values: [UNKNOWN_ORDER_SIDE, BUY, SELL]
+	Side               OrderSide          `json:"side"`
+	OrderConfiguration OrderConfiguration `json:"order_configuration"`
+}
+
+func (req CreateOrderRequest) ToJson() ([]byte, error) {
+	return json.Marshal(req)
+}
+
+// CreateOrder create an order with a specified product_id (asset-pair), side (buy/sell), etc.
+func (c *ApiClient) CreateOrder(req CreateOrderRequest) (CreateOrderData, error) {
+	var data CreateOrderData
+
+	u := c.makeV3Url("/brokerage/orders")
+
+	body, err := req.ToJson()
+	if err != nil {
+		return data, err
+	}
+
+	if c.post(u, body, &data) != nil {
+		return data, ErrFailedToUnmarshal
+	}
+	return data, nil
+}
+
+type CreateOrderData struct {
+	Success            bool                       `json:"success"`
+	FailureReason      string                     `json:"failure_reason"`
+	OrderId            string                     `json:"order_id"`
+	SuccessResponse    CreateOrderSuccessResponse `json:"success_response"`
+	ErrorResponse      CreatOrderErrorResponse    `json:"error_response"`
+	OrderConfiguration OrderConfiguration         `json:"order_configuration"`
+}
+
+type CreatOrderErrorResponse struct {
+	Error                 string `json:"error"`
+	Message               string `json:"message"`
+	ErrorDetails          string `json:"error_details"`
+	PreviewFailureReason  string `json:"preview_failure_reason"`
+	NewOrderFailureReason string `json:"new_order_failure_reason"`
+}
+
+type CreateOrderSuccessResponse struct {
+	OrderId       string `json:"order_id"`
+	ProductId     string `json:"product_id"`
+	Side          string `json:"side"`
+	ClientOrderId string `json:"client_order_id"`
+}
+
+// CancelOrders initiate cancel requests for one or more orders.
+func (c *ApiClient) CancelOrders(orderIds []string) (CancelOrdersData, error) {
+	var data CancelOrdersData
+
+	u := c.makeV3Url("/brokerage/orders/batch_cancel")
+
+	ords := struct {
+		OrderIds []string `json:"order_ids"`
+	}{OrderIds: orderIds}
+
+	body, err := json.Marshal(ords)
+	if err != nil {
+		return data, err
+	}
+
+	if c.post(u, body, &data) != nil {
+		return data, ErrFailedToUnmarshal
+	}
+	return data, nil
+}
+
+type CancelOrdersData struct {
+	Results CancelOrderResults `json:"results"`
+}
+
+type CancelOrderResult struct {
+	Success       bool   `json:"success"`
+	FailureReason string `json:"failure_reason"`
+	OrderId       string `json:"order_id"`
+}
+
+type CancelOrderResults []CancelOrderResult
+
+// UnmarshalJSON implements the json.Unmarshaler interface. Required because Coinbase returns an array of orders or a single order object.
+func (o *CancelOrderResults) UnmarshalJSON(data []byte) error {
+	// First, try unmarshaling into a slice
+	var ordersSlice []CancelOrderResult
+	if err := json.Unmarshal(data, &ordersSlice); err == nil {
+		*o = ordersSlice
+		return nil
+	}
+
+	// If slice fails, try unmarshaling as a single object
+	var singleOrder CancelOrderResult
+	if err := json.Unmarshal(data, &singleOrder); err == nil {
+		*o = CancelOrderResults{singleOrder}
+		return nil
+	}
+
+	// If both attempts fail, return an error
+	return errors.New("orders should be an array or a single object")
 }
