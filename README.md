@@ -18,9 +18,9 @@ Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-
     - [x] Get Account
     - [ ] Create Order
     - [ ] Cancel Orders
-    - [ ] List Orders
+    - [X] List Orders
     - [X] List Fills
-    - [ ] Get Order
+    - [X] Get Order
     - [X] Get Best Bid/Ask
     - [X] Get Product Book
     - [X] List Products

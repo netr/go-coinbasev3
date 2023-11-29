@@ -1,11 +1,39 @@
 package coinbasev3
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
+type OrderType string
+
+const (
+	OrderTypeMarket    OrderType = "MARKET"
+	OrderTypeLimit     OrderType = "LIMIT"
+	OrderTypeStop      OrderType = "STOP"
+	OrderTypeStopLimit OrderType = "STOP_LIMIT"
+	OrderTypeUnknown   OrderType = "UNKNOWN_ORDER_TYPE"
+)
+
+type OrderSide string
+
+const (
+	OrderSideBuy     OrderSide = "BUY"
+	OrderSideSell    OrderSide = "SELL"
+	OrderSideUnknown OrderSide = "UNKNOWN_ORDER_SIDE"
+)
+
+type OrderPlacementSource string
+
+const (
+	OrderPlacementSourceRetailAdvanced OrderPlacementSource = "RETAIL_ADVANCED"
+	OrderPlacementSourceRetailSimple   OrderPlacementSource = "RETAIL_SIMPLE"
+)
+
+// ListFillsRequest represents the request parameters for the GetListFills function.
 type ListFillsRequest struct {
 	// OrderId string ID of order
 	OrderId string `json:"order_id"`
@@ -21,8 +49,8 @@ type ListFillsRequest struct {
 	Cursor string `json:"cursor"`
 }
 
-// GetListFills get a list of fills filtered by optional query parameters (product_id, order_id, etc).
-func (c *ApiClient) GetListFills(req ListFillsRequest) (ListFillsData, error) {
+// BuildQueryString creates a query string from the request parameters. If no parameters are set, an empty string is returned.
+func (req ListFillsRequest) BuildQueryString() string {
 	sb := strings.Builder{}
 	if req.OrderId != "" {
 		sb.WriteString(fmt.Sprintf("&order_id=%s", req.OrderId))
@@ -44,12 +72,15 @@ func (c *ApiClient) GetListFills(req ListFillsRequest) (ListFillsData, error) {
 	}
 
 	// Better way to do this?
-	query := ""
 	if sb.Len() > 0 {
-		query = "?" + sb.String()[1:]
+		return fmt.Sprintf("?%s", sb.String()[1:])
 	}
+	return ""
+}
 
-	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/fills%s", query))
+// GetListFills get a list of fills filtered by optional query parameters (product_id, order_id, etc).
+func (c *ApiClient) GetListFills(req ListFillsRequest) (ListFillsData, error) {
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/fills%s", req.BuildQueryString()))
 	var data ListFillsData
 	if c.get(u, &data) != nil {
 		return data, ErrFailedToUnmarshal
@@ -58,8 +89,30 @@ func (c *ApiClient) GetListFills(req ListFillsRequest) (ListFillsData, error) {
 }
 
 type ListFillsData struct {
-	Fills  []Fill `json:"fills"`
+	Fills  Fills  `json:"fills"`
 	Cursor string `json:"cursor"`
+}
+
+type Fills []Fill
+
+// UnmarshalJSON implements the json.Unmarshaler interface. Required because Coinbase returns an array of fills or a single fill object.
+func (f *Fills) UnmarshalJSON(data []byte) error {
+	// First, try unmarshaling into a slice
+	var fillsSlice []Fill
+	if err := json.Unmarshal(data, &fillsSlice); err == nil {
+		*f = fillsSlice
+		return nil
+	}
+
+	// If slice fails, try unmarshaling as a single object
+	var singleFill Fill
+	if err := json.Unmarshal(data, &singleFill); err == nil {
+		*f = Fills{singleFill}
+		return nil
+	}
+
+	// If both attempts fail, return an error
+	return errors.New("fills should be an array or a single object")
 }
 
 type Fill struct {
@@ -77,4 +130,214 @@ type Fill struct {
 	SizeInQuote        bool      `json:"size_in_quote"`
 	UserId             string    `json:"user_id"`
 	Side               string    `json:"side"`
+}
+
+// ListOrdersRequest represents the request parameters for the GetListOrders function.
+type ListOrdersRequest struct {
+	// ProductId Optional string of the product ID. Defaults to null, or fetch for all products.
+	ProductId string `json:"product_id,omitempty"`
+	// OrderStatus A list of order statuses.
+	OrderStatus []string `json:"order_status"`
+	// Limit A pagination limit with no default set. If has_next is true, additional orders are available to be fetched with pagination.
+	Limit int32 `json:"limit,omitempty"`
+	// StartDate Start date to fetch orders from, inclusive.
+	StartDate string `json:"start_date"`
+	// EndDate An optional end date for the query window, exclusive.
+	EndDate string `json:"end_date,omitempty"`
+	// OrderType Type of orders to return. Default is to return all order types.
+	OrderType OrderType `json:"order_type,omitempty"`
+	// OrderSide Only orders matching this side are returned. Default is to return all sides.
+	OrderSide OrderSide `json:"order_side,omitempty"`
+	// Cursor used for pagination. When provided, the response returns responses after this cursor.
+	Cursor string `json:"cursor,omitempty"`
+	// ProductType Only orders matching this product type are returned. Default is to return all product types.
+	ProductType ProductType `json:"product_type,omitempty"`
+	// OrderPlacementSource Only orders matching this placement source are returned. Default is to return RETAIL_ADVANCED placement source.
+	OrderPlacementSource OrderPlacementSource `json:"order_placement_source,omitempty"`
+	// ContractExpiryType Only orders matching this contract expiry type are returned. Filter is only applied if ProductType is set to FUTURE in the request.
+	ContractExpiryType ContractExpiryType `json:"contract_expiry_type,omitempty"`
+}
+
+// BuildQueryString creates a query string from the request parameters. If no parameters are set, an empty string is returned.
+func (req *ListOrdersRequest) BuildQueryString() string {
+	var sb strings.Builder
+
+	if req.ProductId != "" {
+		sb.WriteString(fmt.Sprintf("&product_id=%s", req.ProductId))
+	}
+	if len(req.OrderStatus) > 0 {
+		for _, status := range req.OrderStatus {
+			sb.WriteString(fmt.Sprintf("&order_status=%s", status))
+		}
+	}
+	if req.Limit != 0 {
+		sb.WriteString(fmt.Sprintf("&limit=%d", req.Limit))
+	}
+	if req.StartDate != "" {
+		sb.WriteString(fmt.Sprintf("&start_date=%s", req.StartDate))
+	}
+	if req.EndDate != "" {
+		sb.WriteString(fmt.Sprintf("&end_date=%s", req.EndDate))
+	}
+	if req.OrderType != "" {
+		sb.WriteString(fmt.Sprintf("&order_type=%s", req.OrderType))
+	}
+	if req.OrderSide != "" {
+		sb.WriteString(fmt.Sprintf("&order_side=%s", req.OrderSide))
+	}
+	if req.Cursor != "" {
+		sb.WriteString(fmt.Sprintf("&cursor=%s", req.Cursor))
+	}
+	if req.ProductType != "" {
+		sb.WriteString(fmt.Sprintf("&product_type=%s", req.ProductType))
+	}
+	if req.OrderPlacementSource != "" {
+		sb.WriteString(fmt.Sprintf("&order_placement_source=%s", req.OrderPlacementSource))
+	}
+	if req.ContractExpiryType != "" {
+		sb.WriteString(fmt.Sprintf("&contract_expiry_type=%s", req.ContractExpiryType))
+	}
+
+	// Remove the first '&' for a clean query string
+	if sb.Len() > 0 {
+		return sb.String()[1:]
+	}
+	return ""
+}
+
+// GetListOrders get a list of orders filtered by optional query parameters (product_id, order_status, etc). Note: You cannot pair open orders with other order types. Example: order_status=OPEN,CANCELLED will return an error.
+func (c *ApiClient) GetListOrders(req ListOrdersRequest) (ListOrdersData, error) {
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/batch%s", req.BuildQueryString()))
+
+	var data ListOrdersData
+	if c.get(u, &data) != nil {
+		return data, ErrFailedToUnmarshal
+	}
+	return data, nil
+}
+
+type ListOrdersData struct {
+	Orders   Orders `json:"orders"`
+	Sequence string `json:"sequence"`
+	HasNext  bool   `json:"has_next"`
+	Cursor   string `json:"cursor"`
+}
+
+type Orders []Order
+
+// UnmarshalJSON implements the json.Unmarshaler interface. Required because Coinbase returns an array of fills or a single fill object.
+func (o *Orders) UnmarshalJSON(data []byte) error {
+	// First, try unmarshaling into a slice
+	var ordersSlice []Order
+	if err := json.Unmarshal(data, &ordersSlice); err == nil {
+		*o = ordersSlice
+		return nil
+	}
+
+	// If slice fails, try unmarshaling as a single object
+	var singleOrder Order
+	if err := json.Unmarshal(data, &singleOrder); err == nil {
+		*o = Orders{singleOrder}
+		return nil
+	}
+
+	// If both attempts fail, return an error
+	return errors.New("orders should be an array or a single object")
+}
+
+type Order struct {
+	OrderId               string             `json:"order_id"`
+	ProductId             string             `json:"product_id"`
+	UserId                string             `json:"user_id"`
+	OrderConfiguration    OrderConfiguration `json:"order_configuration"`
+	Side                  string             `json:"side"`
+	ClientOrderId         string             `json:"client_order_id"`
+	Status                string             `json:"status"`
+	TimeInForce           string             `json:"time_in_force"`
+	CreatedTime           time.Time          `json:"created_time"`
+	CompletionPercentage  string             `json:"completion_percentage"`
+	FilledSize            string             `json:"filled_size"`
+	AverageFilledPrice    string             `json:"average_filled_price"`
+	Fee                   string             `json:"fee"`
+	NumberOfFills         string             `json:"number_of_fills"`
+	FilledValue           string             `json:"filled_value"`
+	PendingCancel         bool               `json:"pending_cancel"`
+	SizeInQuote           bool               `json:"size_in_quote"`
+	TotalFees             string             `json:"total_fees"`
+	SizeInclusiveOfFees   bool               `json:"size_inclusive_of_fees"`
+	TotalValueAfterFees   string             `json:"total_value_after_fees"`
+	TriggerStatus         string             `json:"trigger_status"`
+	OrderType             string             `json:"order_type"`
+	RejectReason          string             `json:"reject_reason"`
+	Settled               string             `json:"settled"`
+	ProductType           string             `json:"product_type"`
+	RejectMessage         string             `json:"reject_message"`
+	CancelMessage         string             `json:"cancel_message"`
+	OrderPlacementSource  string             `json:"order_placement_source"`
+	OutstandingHoldAmount string             `json:"outstanding_hold_amount"`
+	IsLiquidation         string             `json:"is_liquidation"`
+	LastFillTime          string             `json:"last_fill_time"`
+	EditHistory           []EditHistory      `json:"edit_history"`
+}
+
+type EditHistory struct {
+	Price                  string `json:"price"`
+	Size                   string `json:"size"`
+	ReplaceAcceptTimestamp string `json:"replace_accept_timestamp"`
+}
+
+type OrderConfiguration struct {
+	MarketMarketIoc       MarketMarketIoc       `json:"market_market_ioc"`
+	LimitLimitGtc         LimitLimitGtc         `json:"limit_limit_gtc"`
+	LimitLimitGtd         LimitLimitGtd         `json:"limit_limit_gtd"`
+	StopLimitStopLimitGtc StopLimitStopLimitGtc `json:"stop_limit_stop_limit_gtc"`
+	StopLimitStopLimitGtd StopLimitStopLimitGtd `json:"stop_limit_stop_limit_gtd"`
+}
+
+type MarketMarketIoc struct {
+	QuoteSize string `json:"quote_size"`
+	BaseSize  string `json:"base_size"`
+}
+
+type LimitLimitGtc struct {
+	BaseSize   string `json:"base_size"`
+	LimitPrice string `json:"limit_price"`
+	PostOnly   bool   `json:"post_only"`
+}
+
+type LimitLimitGtd struct {
+	BaseSize   string    `json:"base_size"`
+	LimitPrice string    `json:"limit_price"`
+	EndTime    time.Time `json:"end_time"`
+	PostOnly   bool      `json:"post_only"`
+}
+
+type StopLimitStopLimitGtc struct {
+	BaseSize      string `json:"base_size"`
+	LimitPrice    string `json:"limit_price"`
+	StopPrice     string `json:"stop_price"`
+	StopDirection string `json:"stop_direction"`
+}
+
+type StopLimitStopLimitGtd struct {
+	BaseSize      float64   `json:"base_size"`
+	LimitPrice    string    `json:"limit_price"`
+	StopPrice     string    `json:"stop_price"`
+	EndTime       time.Time `json:"end_time"`
+	StopDirection string    `json:"stop_direction"`
+}
+
+// GetOrder get a single order by order ID.
+func (c *ApiClient) GetOrder(orderId string) (Order, error) {
+	u := c.makeV3Url(fmt.Sprintf("/brokerage/orders/historical/%s", orderId))
+
+	var data GetOrderData
+	if c.get(u, &data) != nil {
+		return data.Order, ErrFailedToUnmarshal
+	}
+	return data.Order, nil
+}
+
+type GetOrderData struct {
+	Order Order `json:"order"`
 }
