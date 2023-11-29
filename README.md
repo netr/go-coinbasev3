@@ -19,7 +19,7 @@ Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-
     - [ ] Create Order
     - [ ] Cancel Orders
     - [ ] List Orders
-    - [ ] List Fills
+    - [X] List Fills
     - [ ] Get Order
     - [X] Get Best Bid/Ask
     - [X] Get Product Book
@@ -27,7 +27,7 @@ Resource: [Rest API Pro Mapping](https://docs.cloud.coinbase.com/advanced-trade-
     - [X] Get Product
     - [X] Get Product Candles
     - [X] Get Market Trades
-    - [ ] Get Transactions Summary
+    - [X] Get Transactions Summary
 - [ ] Sign In with Coinbase API v2
   - [ ] Show an Account
   - [ ] List Transactions
